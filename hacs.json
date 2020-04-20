@@ -1,0 +1,6 @@
+{
+  "name": "FKF Budapest Garbage Collection",
+  "country": ["HU"],
+  "domains": ["sensor"],
+  "render_readme": "true"
+}
