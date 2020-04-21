@@ -28,7 +28,7 @@ CONF_NAME = 'name'
 DEFAULT_NAME = 'FKF Garbage'
 DEFAULT_ICON = 'mdi:trash-can-outline'
 
-SCAN_INTERVAL = timedelta(hours=3)
+SCAN_INTERVAL = timedelta(hours=1)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_ZIPCODE): cv.string,
