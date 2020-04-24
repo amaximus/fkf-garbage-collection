@@ -17,7 +17,7 @@ Define sensors with the following configuration parameters according to [FKF Hul
 ---
 | Name | Optional | `Default` | Description |
 | :---- | :---- | :------- | :----------- |
-| name | **N** | - | sensor of fkf_garbage_collection type |
+| name | **Y** | - | sensor of fkf_garbage_collection type |
 | zipcode | **N** | - | ZIP code |
 | publicplace | **N** | - | Name of public place |
 | housenr | **N** | - | House number |

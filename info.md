@@ -1,3 +1,5 @@
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
+
 # FKF Budapest Garbage Collection custom component for Home Assistant
 
 This custom component gathers garbage collection schedule from FKF Budapest Department of Public
@@ -10,12 +12,12 @@ search for <i>FKF Budapest Garbage</i> in the Integrations.<br />
 Sensors of this platform should be configured as per below information.
 
 #### Configuration:
-Define sensors with the following configuration parameters according to [FKF Hulladéknaptár](https://www.fkf.hu/hulladeknaptar/) <br />
+Define sensors with the following configuration parameters according to [FKF Hulladéknaptár](https://www.fkf.hu/hulladeknaptar/).<br />
 
 ---
 | Name | Optional | `Default` | Description |
 | :---- | :---- | :------- | :----------- |
-| name | **N** | - | sensor of fkf_garbage_collection type |
+| name | **Y** | - | sensor of fkf_garbage_collection type |
 | zipcode | **N** | - | ZIP code |
 | publicplace | **N** | - | Name of public place |
 | housenr | **N** | - | House number |
