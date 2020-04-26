@@ -162,7 +162,7 @@ class FKFGarbageCollectionSensor(Entity):
         return attr
 
     @asyncio.coroutine
-    def async_update(self):
+    async def async_update(self):
         _LOGGER.debug("fkf update for " + self._zipcode)
         fkfdata = get_fkfdata(self)
 
