@@ -5,9 +5,8 @@ import json
 import logging
 import lxml.html as lh
 import re
-import requests
-import urllib.request
 import voluptuous as vol
+import aiohttp
 
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import ATTR_ATTRIBUTION, CONF_NAME
@@ -49,7 +48,7 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     session = async_get_clientsession(hass)
 
     async_add_devices(
-        [FKFGarbageCollectionSensor(name, zipcode, publicplace, housenr)],update_before_add=True)
+        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr)],update_before_add=True)
 
 def dconverter(argument):
     switcher = {
@@ -72,14 +71,17 @@ def gconverter(argument):
     }
     return switcher.get(argument)
 
-def get_fkfdata(self):
+async def async_get_fkfdata(self):
     payload_key = ["district","publicPlace","houseNumber"]
     october_par = ["ajax/publicPlaces","ajax/houseNumbers","ajax/calSearchResults"]
     october_hnd = ["onSelectDistricts","onSavePublicPlace","onSearch"]
 
+    session = async_get_clientsession(self._hass)
+
     url = 'https://www.fkf.hu/'
-    r = requests.get(url)
-    cookie=r.headers['Set-Cookie']
+    async with session.get(url) as response:
+      r = await response.text()
+      cookie = response.headers['Set-Cookie']
 
     url = 'https://www.fkf.hu/hulladeknaptar'
 
@@ -95,9 +97,8 @@ def get_fkfdata(self):
              'Sec-Fetch-Dest': 'empty', \
              'X-Requested-With': 'XMLHttpRequest', \
              'Cookie': cookie}
-       r = requests.post(url, data=payload, headers=headers)
-
-    fdata = r.json()
+       async with session.post(url, data=payload, headers=headers) as response:
+          fdata = await response.json()
 
     date_format = "%Y.%m.%d"
     today = datetime.today().strftime(date_format)
@@ -131,45 +132,43 @@ def get_fkfdata(self):
           json_data_list.append(json_data)
     return json_data_list
 
-
 class FKFGarbageCollectionSensor(Entity):
 
-    def __init__(self, name, zipcode, publicplace, housenr ):
+    def __init__(self, hass, name, zipcode, publicplace, housenr ):
         """Initialize the sensor."""
+        self._hass = hass
         self._name = name
         self._zipcode = zipcode
         self._publicplace = publicplace.replace(" ","---")
         self._housenr = housenr
         self._state = None
+        self._fkfdata = []
         self._icon = DEFAULT_ICON
 
     @property
     def device_state_attributes(self):
         attr = {}
 
-        fkfdata = get_fkfdata(self)
-
-        attr["items"] = len(fkfdata)
+        attr["items"] = len(self._fkfdata)
         if attr["items"] != 0:
           i = 0
-          while i < len(fkfdata):
-            attr['in' + str(i)] = fkfdata[i]['diff']
-            attr['day' + str(i)] = fkfdata[i]['day']
-            attr['date' + str(i)] = fkfdata[i]['date']
-            attr['garbage' + str(i)] = fkfdata[i]['garbage']
+          while i < len(self._fkfdata):
+            attr['in' + str(i)] = self._fkfdata[i]['diff']
+            attr['day' + str(i)] = self._fkfdata[i]['day']
+            attr['date' + str(i)] = self._fkfdata[i]['date']
+            attr['garbage' + str(i)] = self._fkfdata[i]['garbage']
 
             i += 1
         return attr
 
     @asyncio.coroutine
     async def async_update(self):
-        _LOGGER.debug("fkf update for " + self._zipcode)
-        fkfdata = get_fkfdata(self)
+        self._fkfdata = await async_get_fkfdata(self)
 
-        if len(fkfdata) == 0:
+        if len(self._fkfdata) == 0:
            self._state = None
         else:
-           self._state = fkfdata[0]['diff']
+           self._state = self._fkfdata[0]['diff']
         return self._state  
 
     @property
