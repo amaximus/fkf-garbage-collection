@@ -115,21 +115,25 @@ async def async_get_fkfdata(self):
     doc = lh.fromstring(s)
     tr_elements = doc.xpath('//tr')
 
-    gday = tr_elements[0].xpath('//td[1]/text()')
-    gdate = tr_elements[0].xpath('//td[2]/text()')
-    garbage = tr_elements[0].xpath('//td[3]/text()')
-
     json_data_list = []
-    for i in range(len(garbage)-1):
-      if garbage[i] and not garbage[i] == ' ':
-        a = datetime.strptime(today, date_format)
-        b = datetime.strptime(gdate[i], date_format)
-        if (b - a).days >= 0: 
-          json_data = {"day": dconverter(gday[i]), \
-                       "date": gdate[i], \
-                       "garbage": gconverter(garbage[i].strip()), \
-                       "diff": (b - a).days}
-          json_data_list.append(json_data)
+    if len(tr_elements) > 0:
+      gday = tr_elements[0].xpath('//td[1]/text()')
+      gdate = tr_elements[0].xpath('//td[2]/text()')
+      garbage = tr_elements[0].xpath('//td[3]/text()')
+
+      for i in range(len(garbage)-1):
+        if garbage[i] and not garbage[i] == ' ':
+          a = datetime.strptime(today, date_format)
+          b = datetime.strptime(gdate[i], date_format)
+          if (b - a).days >= 0:
+            json_data = {"day": dconverter(gday[i]), \
+                         "date": gdate[i], \
+                         "garbage": gconverter(garbage[i].strip()), \
+                         "diff": (b - a).days}
+            json_data_list.append(json_data)
+    else:
+      _LOGGER.debug("Fetch info for %s/%s/%s: %s", self._zipcode, self._publicplace, self._housenr, s)
+
     return json_data_list
 
 class FKFGarbageCollectionSensor(Entity):
@@ -143,6 +147,7 @@ class FKFGarbageCollectionSensor(Entity):
         self._housenr = housenr
         self._state = None
         self._fkfdata = []
+        self._current = "current"
         self._icon = DEFAULT_ICON
 
     @property
@@ -150,6 +155,7 @@ class FKFGarbageCollectionSensor(Entity):
         attr = {}
 
         attr["items"] = len(self._fkfdata)
+        attr["current"] = self._current
         if attr["items"] != 0:
           i = 0
           while i < len(self._fkfdata):
@@ -163,12 +169,14 @@ class FKFGarbageCollectionSensor(Entity):
 
     @asyncio.coroutine
     async def async_update(self):
-        self._fkfdata = await async_get_fkfdata(self)
+        fkfdata = await async_get_fkfdata(self)
 
-        if len(self._fkfdata) == 0:
-           self._state = None
-        else:
+        if len(fkfdata) != 0:
+           self._fkfdata = fkfdata
            self._state = self._fkfdata[0]['diff']
+           self._current = "current"
+        else:
+           self._current = "not_current"
         return self._state  
 
     @property

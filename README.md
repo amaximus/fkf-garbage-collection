@@ -5,6 +5,7 @@
 This custom component gathers garbage collection schedule from FKF Budapest Department of Public
 for a configurable address.
 The state of the sensor will be the number of days to the first upcoming garbage collection date.
+The sensor will also report in an attribute the status of the latest data fetch.
 
 #### Installation
 The easiest way to install it is through [HACS (Home Assistant Community Store)](https://custom-components.github.io/hacs/),
