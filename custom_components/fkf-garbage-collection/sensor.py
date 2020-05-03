@@ -139,7 +139,7 @@ class FKFGarbageCollectionSensor(Entity):
         self._hass = hass
         self._name = name
         self._zipcode = zipcode
-        self._publicplace = publicplace.replace(" ","---")
+        self._publicplace = "---".join(publicplace.rsplit(" ", 1))
         self._housenr = housenr
         self._state = None
         self._fkfdata = []
