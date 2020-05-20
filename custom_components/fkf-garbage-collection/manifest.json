@@ -4,5 +4,5 @@
   "documentation": "https://github.com/amaximus/fkf_garbage_collection",
   "dependencies": [],
   "codeowners": ["@amaximus"],
-  "requirements": []
+  "requirements": ["lxml"]
 }
