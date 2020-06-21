@@ -23,9 +23,11 @@ CONF_ZIPCODE = 'zipcode'
 CONF_PUBLICPLACE = 'publicplace'
 CONF_HOUSENR = 'housenr'
 CONF_NAME = 'name'
+CONF_OFFSETDAYS = 'offsetdays'
 
 DEFAULT_NAME = 'FKF Garbage'
 DEFAULT_ICON = 'mdi:trash-can-outline'
+DEFAULT_CONF_OFFSETDAYS = 0
 
 SCAN_INTERVAL = timedelta(hours=1)
 
@@ -33,7 +35,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_ZIPCODE): cv.string,
     vol.Required(CONF_PUBLICPLACE): cv.string,
     vol.Required(CONF_HOUSENR): cv.string,
-    vol.Optional(CONF_NAME): cv.string,
+    vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+    vol.Optional(CONF_OFFSETDAYS, default=DEFAULT_CONF_OFFSETDAYS): cv.positive_int,
 })
 
 @asyncio.coroutine
@@ -44,11 +47,12 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     zipcode = config.get(CONF_ZIPCODE)
     publicplace = config.get(CONF_PUBLICPLACE)
     housenr = config.get(CONF_HOUSENR)
+    offsetdays = config.get(CONF_OFFSETDAYS)
 
     session = async_get_clientsession(hass)
 
     async_add_devices(
-        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr)],update_before_add=True)
+        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays)],update_before_add=True)
 
 def dconverter(argument):
     switcher = {
@@ -125,11 +129,11 @@ async def async_get_fkfdata(self):
         if garbage[i] and not garbage[i] == ' ':
           a = datetime.strptime(today, date_format)
           b = datetime.strptime(gdate[i], date_format)
-          if (b - a).days >= 0:
+          if (b - a).days - self._offsetdays >= 0:
             json_data = {"day": dconverter(gday[i]), \
                          "date": gdate[i], \
                          "garbage": gconverter(garbage[i].strip()), \
-                         "diff": (b - a).days}
+                         "diff": (b - a).days - self._offsetdays}
             json_data_list.append(json_data)
     else:
       _LOGGER.debug("Fetch info for %s/%s/%s: %s", self._zipcode, self._publicplace, self._housenr, s)
@@ -138,7 +142,7 @@ async def async_get_fkfdata(self):
 
 class FKFGarbageCollectionSensor(Entity):
 
-    def __init__(self, hass, name, zipcode, publicplace, housenr ):
+    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays):
         """Initialize the sensor."""
         self._hass = hass
         self._name = name
@@ -148,6 +152,7 @@ class FKFGarbageCollectionSensor(Entity):
         self._state = None
         self._fkfdata = []
         self._current = "current"
+        self._offsetdays = offsetdays
         self._icon = DEFAULT_ICON
 
     @property
@@ -156,6 +161,7 @@ class FKFGarbageCollectionSensor(Entity):
 
         attr["items"] = len(self._fkfdata)
         attr["current"] = self._current
+        attr["provider"] = CONF_ATTRIBUTION
         if attr["items"] != 0:
           i = 0
           while i < len(self._fkfdata):
@@ -186,3 +192,7 @@ class FKFGarbageCollectionSensor(Entity):
     @property
     def state(self):
         return self._state
+
+    @property
+    def icon(self):
+        return self._icon
