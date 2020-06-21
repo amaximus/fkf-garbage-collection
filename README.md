@@ -23,6 +23,7 @@ Define sensors with the following configuration parameters according to [FKF Hul
 | zipcode | **N** | - | ZIP code |
 | publicplace | **N** | - | Name of public place |
 | housenr | **N** | - | House number |
+| offsetdays | **Y** | - | Optional offset for the number of days left (usually 1) |
 ---
 
 #### Example
