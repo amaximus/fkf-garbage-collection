@@ -27,6 +27,7 @@ CONF_OFFSETDAYS = 'offsetdays'
 
 DEFAULT_NAME = 'FKF Garbage'
 DEFAULT_ICON = 'mdi:trash-can-outline'
+DEFAULT_ICON_SELECTIVE = 'mdi:recycle'
 DEFAULT_CONF_OFFSETDAYS = 0
 
 SCAN_INTERVAL = timedelta(hours=1)
@@ -161,7 +162,6 @@ class FKFGarbageCollectionSensor(Entity):
 
         attr["items"] = len(self._fkfdata)
         attr["current"] = self._current
-        attr["provider"] = CONF_ATTRIBUTION
         if attr["items"] != 0:
           i = 0
           while i < len(self._fkfdata):
@@ -169,8 +169,9 @@ class FKFGarbageCollectionSensor(Entity):
             attr['day' + str(i)] = self._fkfdata[i]['day']
             attr['date' + str(i)] = self._fkfdata[i]['date']
             attr['garbage' + str(i)] = self._fkfdata[i]['garbage']
-
             i += 1
+
+        attr["provider"] = CONF_ATTRIBUTION
         return attr
 
     @asyncio.coroutine
@@ -195,4 +196,8 @@ class FKFGarbageCollectionSensor(Entity):
 
     @property
     def icon(self):
-        return self._icon
+        if self._fkfdata[0]['garbage'] == "communal":
+            return DEFAULT_ICON
+        else:
+            return DEFAULT_ICON_SELECTIVE
+
