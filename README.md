@@ -39,3 +39,54 @@ There is a Lovelace custom card related to this component at [https://github.com
 
 #### Custom Lovelace card example:<br />
 ![Garbage Collection card example](fkf_alerted.png)
+
+#### Home Assistant Companion App notification example
+You can set up an automation to get a notification on your phone so you don't forget to pull out the trash bins:
+
+```yaml
+- alias: 'Tedd ki a szemetet'
+  trigger:
+    - platform: time
+      at: '18:00:00'
+  condition:
+    condition: and
+    conditions:
+    - condition: state
+      entity_id: 'person.me'
+      state: 'home'
+    - condition: state
+      entity_id: sensor.fkf_hulladek
+      state: '0'
+  action:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ is_state_attr('sensor.fkf_hulladek', 'garbage0', 'communal') }}"
+          sequence:
+            - service: notify.mobile_app_me
+              data:
+                title: 'Tedd ki a szemetet!'
+                message: 'A kommunális :wastebasket: -át ma ki kell tolni.'
+                data:
+                  channel: Kuka
+                  clickAction: /lovelace/default_view
+        - conditions:
+            - condition: template
+              value_template: "{{ is_state_attr('sensor.fkf_hulladek', 'garbage0', 'selective') }}"
+          sequence:
+            - service: notify.mobile_app_me
+              data:
+                title: 'Tedd ki a szemetet!'
+                message: 'A szelektív :wastebasket: -át ma ki kell tolni.'
+                data:
+                  channel: Kuka
+                  clickAction: /lovelace/default_view
+      default:
+        - service: notify.mobile_app_me
+          data:
+            title: 'Tedd ki a szemetet!'
+            message: 'A :wastebasket: -át ma ki kell tolni.'
+            data:
+              channel: Kuka
+              clickAction: /lovelace/default_view
+```
