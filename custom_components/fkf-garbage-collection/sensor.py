@@ -130,11 +130,24 @@ async def async_get_fkfdata(self):
         if garbage[i] and not garbage[i] == ' ':
           a = datetime.strptime(today, date_format)
           b = datetime.strptime(gdate[i], date_format)
+
           if (b - a).days - self._offsetdays >= 0:
+            gtype = gconverter(garbage[i].strip())
+            gdays = (b - a).days - self._offsetdays
+
+            if gtype == "selective" and self._next_selective_days == None:
+              self._next_selective_days = gdays
+            if gtype == "communal" and self._next_communal_days == None:
+              self._next_communal_days = gdays
+            if gtype == "both" and self._next_selective_days == None:
+              self._next_selective_days = gdays
+              if self._next_communal_days == None:
+                self._next_communal_days = gdays
+
             json_data = {"day": dconverter(gday[i]), \
                          "date": gdate[i], \
-                         "garbage": gconverter(garbage[i].strip()), \
-                         "diff": (b - a).days - self._offsetdays}
+                         "garbage": gtype, \
+                         "diff": gdays}
             json_data_list.append(json_data)
     else:
       _LOGGER.debug("Fetch info for %s/%s/%s: %s", self._zipcode, self._publicplace, self._housenr, s)
@@ -155,6 +168,8 @@ class FKFGarbageCollectionSensor(Entity):
         self._current = "current"
         self._offsetdays = offsetdays
         self._icon = DEFAULT_ICON
+        self._next_communal_days = None
+        self._next_selective_days = None
 
     @property
     def device_state_attributes(self):
@@ -171,11 +186,17 @@ class FKFGarbageCollectionSensor(Entity):
             attr['garbage' + str(i)] = self._fkfdata[i]['garbage']
             i += 1
 
+        attr["next_communal_days"] = self._next_communal_days
+        attr["next_selective_days"] = self._next_selective_days
+
         attr["provider"] = CONF_ATTRIBUTION
         return attr
 
     @asyncio.coroutine
     async def async_update(self):
+        self._next_communal_days = None
+        self._next_selective_days = None
+
         fkfdata = await async_get_fkfdata(self)
 
         if len(fkfdata) != 0:
@@ -200,4 +221,3 @@ class FKFGarbageCollectionSensor(Entity):
             return DEFAULT_ICON
         else:
             return DEFAULT_ICON_SELECTIVE
-
