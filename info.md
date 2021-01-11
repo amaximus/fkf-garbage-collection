@@ -6,9 +6,12 @@
 
 This custom component gathers garbage collection schedule from FKF Budapest Department of Public
 for a configurable address.
+
 The state of the sensor will be the number of days to the first upcoming garbage collection date.
+
 The sensor will also report in an attribute the status of the latest data fetch.
-The FKF Garbage Collection sensors can alse be added to appear HASS calendar. They will be prefixed
+
+The FKF Garbage Collection sensors can also be added to appear in HASS calendar. Calendar entries will be prefixed
 with the friendly name of the sensor to support and distinguish multiple such sensors.
 
 #### Installation
