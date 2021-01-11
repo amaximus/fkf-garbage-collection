@@ -13,6 +13,15 @@ from homeassistant.const import ATTR_ATTRIBUTION, CONF_NAME
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.discovery import async_load_platform
+
+from .calendar import EntitiesCalendarData
+from .const import (
+    DOMAIN,
+    CALENDAR_NAME,
+    CALENDAR_PLATFORM,
+    SENSOR_PLATFORM,
+)
 
 REQUIREMENTS = [ ]
 
@@ -24,12 +33,15 @@ CONF_PUBLICPLACE = 'publicplace'
 CONF_HOUSENR = 'housenr'
 CONF_NAME = 'name'
 CONF_OFFSETDAYS = 'offsetdays'
+CONF_CALENDAR = 'calendar'
 
 DEFAULT_NAME = 'FKF Garbage'
 DEFAULT_ICON = 'mdi:trash-can-outline'
 DEFAULT_ICON_SELECTIVE = 'mdi:recycle'
 DEFAULT_CONF_OFFSETDAYS = 0
+DEFAULT_CONF_CALENDAR = 'false'
 
+#SCAN_INTERVAL = timedelta(hours=1)
 SCAN_INTERVAL = timedelta(hours=1)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -38,22 +50,22 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOUSENR): cv.string,
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
     vol.Optional(CONF_OFFSETDAYS, default=DEFAULT_CONF_OFFSETDAYS): cv.positive_int,
+    vol.Optional(CONF_CALENDAR, default=DEFAULT_CONF_CALENDAR): cv.boolean,
 })
 
 @asyncio.coroutine
 def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
-    #_LOGGER.debug("start async setup platform")
-
     name = config.get(CONF_NAME)
     zipcode = config.get(CONF_ZIPCODE)
     publicplace = config.get(CONF_PUBLICPLACE)
     housenr = config.get(CONF_HOUSENR)
     offsetdays = config.get(CONF_OFFSETDAYS)
+    calendar = config.get(CONF_CALENDAR)
 
     session = async_get_clientsession(hass)
 
     async_add_devices(
-        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays)],update_before_add=True)
+        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar)],update_before_add=True)
 
 def dconverter(argument):
     switcher = {
@@ -156,7 +168,7 @@ async def async_get_fkfdata(self):
 
 class FKFGarbageCollectionSensor(Entity):
 
-    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays):
+    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar):
         """Initialize the sensor."""
         self._hass = hass
         self._name = name
@@ -170,6 +182,37 @@ class FKFGarbageCollectionSensor(Entity):
         self._icon = DEFAULT_ICON
         self._next_communal_days = None
         self._next_selective_days = None
+        self._calendar = calendar
+
+    async def async_added_to_hass(self):
+        """When sensor is added to hassio, add it to calendar."""
+        await super().async_added_to_hass()
+        if DOMAIN not in self.hass.data:
+            self.hass.data[DOMAIN] = {}
+        if SENSOR_PLATFORM not in self.hass.data[DOMAIN]:
+            self.hass.data[DOMAIN][SENSOR_PLATFORM] = {}
+        self.hass.data[DOMAIN][SENSOR_PLATFORM][self.entity_id] = self
+
+        if self._calendar:
+            if CALENDAR_PLATFORM not in self.hass.data[DOMAIN]:
+                 self.hass.data[DOMAIN][CALENDAR_PLATFORM] = EntitiesCalendarData(self.hass)
+                 _LOGGER.debug("Creating fkfgarbage_collection calendar " + self._name)
+                 self.hass.async_create_task(
+                      async_load_platform(
+                          self.hass,
+                          CALENDAR_PLATFORM,
+                          DOMAIN,
+                          {"name": CALENDAR_NAME},
+                          {"name": CALENDAR_NAME},
+                      )
+                 )
+            self.hass.data[DOMAIN][CALENDAR_PLATFORM].add_entity(self.entity_id)
+
+    async def async_will_remove_from_hass(self):
+        """When sensor is added to hassio, remove it."""
+        await super().async_will_remove_from_hass()
+        del self.hass.data[DOMAIN][SENSOR_PLATFORM][self.entity_id]
+        self.hass.data[DOMAIN][CALENDAR_PLATFORM].remove_entity(self.entity_id)
 
     @property
     def device_state_attributes(self):
@@ -192,6 +235,16 @@ class FKFGarbageCollectionSensor(Entity):
         attr["provider"] = CONF_ATTRIBUTION
         return attr
 
+    def __repr__(self):
+        """Return main sensor parameters."""
+        return (
+            f"FKFGarbagecollection[ name: {self._name}, "
+            f"entity_id: {self.entity_id}, "
+            f"state: {self.state}\n"
+            f"config: {self.config}]"
+        )
+
+
     @asyncio.coroutine
     async def async_update(self):
         self._next_communal_days = None
@@ -205,7 +258,7 @@ class FKFGarbageCollectionSensor(Entity):
            self._current = "current"
         else:
            self._current = "not_current"
-        return self._state  
+        return self._state
 
     @property
     def name(self):

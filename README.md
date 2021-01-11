@@ -8,6 +8,8 @@ This custom component gathers garbage collection schedule from FKF Budapest Depa
 for a configurable address.
 The state of the sensor will be the number of days to the first upcoming garbage collection date.
 The sensor will also report in an attribute the status of the latest data fetch.
+The FKF Garbage Collection sensors can alse be added to appear HASS calendar. They will be prefixed
+with the friendly name of the sensor to support and distinguish multiple such sensors.
 
 #### Installation
 The easiest way to install it is through [HACS (Home Assistant Community Store)](https://custom-components.github.io/hacs/),
@@ -25,6 +27,7 @@ Define sensors with the following configuration parameters according to [FKF Hul
 | zipcode | **N** | - | ZIP code |
 | publicplace | **N** | - | Name of public place |
 | housenr | **N** | - | House number |
+| calendar | **Y** | `false` | Show FKF schedule in calendar |
 ---
 
 #### Example
@@ -92,3 +95,9 @@ You can set up an automation to get a notification on your phone so you don't fo
               channel: Kuka
               clickAction: /lovelace/default_view
 ```
+
+## Thanks
+
+Thanks to all the people who have contributed!
+
+[![contributors](https://contributors-img.web.app/image?repo=amaximus/fkf-garbage-collection)](https://github.com/amaximus/fkf-garbage-collection/graphs/contributors)

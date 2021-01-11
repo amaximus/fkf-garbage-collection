@@ -3,6 +3,7 @@
   "name": "FKF Budapest Garbage Collection",
   "documentation": "https://github.com/amaximus/fkf_garbage_collection",
   "dependencies": [],
+  "config_flow": false,
   "codeowners": ["@amaximus"],
-  "requirements": ["lxml"]
+  "requirements": ["lxml", "voluptuous"]
 }
