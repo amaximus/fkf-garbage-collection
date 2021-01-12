@@ -67,14 +67,16 @@ class EntitiesCalendarData:
         self.event = None
         self._hass = hass
         self.entities = []
-        self._hu = { "both": "kommunális, szelektív",
-                     "communal": "kommunális",
-                     "selective": "szelektív"
-                   }
-        self._en = { "both": "communal, selective",
-                     "communal": "communal",
-                     "selective": "selective"
-                   }
+        self._translation = {
+            "hu": { "both": "kommunális, szelektív",
+                    "communal": "kommunális",
+                    "selective": "szelektív"
+                  },
+            "en": { "both": "communal, selective",
+                    "communal": "communal",
+                    "selective": "selective"
+                  }
+       }
 
     def add_entity(self, entity_id):
         """Append entity ID to the calendar."""
@@ -117,10 +119,10 @@ class EntitiesCalendarData:
             while i < len(startdates):
                 if startdates[str(i)] is not None:
                     end = startdates[str(i)] + timedelta(days=1)
-                    if calendar_lang == 'hu':
-                        gtype = self._hu[garbages[str(i)]]
+                    if calendar_lang in self._translation:
+                      gtype = self._translation[calendar_lang][garbages[str(i)]]
                     else:
-                        gtype = self._en[garbages[str(i)]]
+                      gtype = self._translation["en"][garbages[str(i)]]
 
                     event = {
                         "uid": entity,
@@ -163,10 +165,10 @@ class EntitiesCalendarData:
           idx = min(next_dates.keys(), key=(lambda k: next_dates[k]))
           start = next_dates[str(idx)]
           end = start + timedelta(days=1)
-          if calendar_lang == 'hu':
-            name = self._hu[garbages[str(i)]]
+          if calendar_lang in self._translation:
+            name = self._translation[calendar_lang][garbages[str(i)]]
           else:
-            name = self._en[garbages[str(i)]]
+            name = self._translation["en"][garbages[str(i)]]
 
           self.event = {
             "uid": str(idx),
