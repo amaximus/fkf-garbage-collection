@@ -32,6 +32,7 @@ Define sensors with the following configuration parameters according to [FKF Hul
 | zipcode | **N** | - | ZIP code |
 | publicplace | **N** | - | Name of public place |
 | housenr | **N** | - | House number |
+| offsetdays | **Y** | `0` | Optional offset for the number of days left (usually 1) |
 | calendar | **Y** | `false` | Show FKF schedule in calendar |
 | calendar_lang | **Y** | `en` | Language to display garbage type in calendar |
 ---
