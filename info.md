@@ -12,7 +12,8 @@ The state of the sensor will be the number of days to the first upcoming garbage
 The sensor will also report in an attribute the status of the latest data fetch.
 
 The FKF Garbage Collection sensors can also be added to appear in HASS calendar. Calendar entries will be prefixed
-with the friendly name of the sensor to support and distinguish multiple such sensors.
+with the friendly name of the sensor to support and distinguish multiple such sensors. Translation is also available
+through the calendar_lang option; so far only Hungarian and English are supported.
 
 #### Installation
 The easiest way to install it is through [HACS (Home Assistant Community Store)](https://custom-components.github.io/hacs/),
@@ -31,6 +32,7 @@ Define sensors with the following configuration parameters according to [FKF Hul
 | publicplace | **N** | - | Name of public place |
 | housenr | **N** | - | House number |
 | calendar | **Y** | `false` | Show FKF schedule in calendar |
+| calendar_lang | **Y** | `en` | Language to display garbage type in calendar |
 ---
 
 #### Example

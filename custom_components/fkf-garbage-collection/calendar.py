@@ -67,6 +67,14 @@ class EntitiesCalendarData:
         self.event = None
         self._hass = hass
         self.entities = []
+        self._hu = { "both": "kommunális, szelektív",
+                     "communal": "kommunális",
+                     "selective": "szelektív"
+                   }
+        self._en = { "both": "communal, selective",
+                     "communal": "communal",
+                     "selective": "selective"
+                   }
 
     def add_entity(self, entity_id):
         """Append entity ID to the calendar."""
@@ -83,6 +91,7 @@ class EntitiesCalendarData:
         events = []
         startdates = {}
         garbages = {}
+        calendar_lang = "en"
         if SENSOR_PLATFORM not in hass.data[DOMAIN]:
             return events
         #start_date = start_datetime.date()
@@ -101,15 +110,21 @@ class EntitiesCalendarData:
                 if x is not None:
                     idx = key[x.end():]
                     garbages[idx] = attributes[key]
+                if key == 'calendar_lang':
+                    calendar_lang = attributes[key]
 
             i = 0
             while i < len(startdates):
                 if startdates[str(i)] is not None:
                     end = startdates[str(i)] + timedelta(days=1)
+                    if calendar_lang == 'hu':
+                        gtype = self._hu[garbages[str(i)]]
+                    else:
+                        gtype = self._en[garbages[str(i)]]
 
                     event = {
                         "uid": entity,
-                        "summary": friendly_name + ": " + garbages[str(i)],
+                        "summary": friendly_name + ": " + gtype,
                         "start": {"date": startdates[str(i)].strftime("%Y-%m-%d")},
                         "end": {"date": end.strftime("%Y-%m-%d")},
                         "allDay": True,
@@ -123,6 +138,7 @@ class EntitiesCalendarData:
         """Get the latest data."""
         next_dates = {}
         garbages = {}
+        calendar_lang = ""
         i = 0
         for entity in self.entities:
           if entity not in self._hass.data[DOMAIN][SENSOR_PLATFORM]:
@@ -140,11 +156,18 @@ class EntitiesCalendarData:
               idx = key[x.end():]
               garbages[str(idx)] = attributes[key]
 
+            if key == 'calendar_lang':
+              calendar_lang = attributes[key]
+
         if len(next_dates) > 0:
           idx = min(next_dates.keys(), key=(lambda k: next_dates[k]))
           start = next_dates[str(idx)]
           end = start + timedelta(days=1)
-          name = garbages[idx]
+          if calendar_lang == 'hu':
+            name = self._hu[garbages[str(i)]]
+          else:
+            name = self._en[garbages[str(i)]]
+
           self.event = {
             "uid": str(idx),
             "summary": friendly_name + ": " + name,

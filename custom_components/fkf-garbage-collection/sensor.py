@@ -34,12 +34,14 @@ CONF_HOUSENR = 'housenr'
 CONF_NAME = 'name'
 CONF_OFFSETDAYS = 'offsetdays'
 CONF_CALENDAR = 'calendar'
+CONF_CALENDAR_LANG = 'calendar_lang'
 
 DEFAULT_NAME = 'FKF Garbage'
 DEFAULT_ICON = 'mdi:trash-can-outline'
 DEFAULT_ICON_SELECTIVE = 'mdi:recycle'
 DEFAULT_CONF_OFFSETDAYS = 0
 DEFAULT_CONF_CALENDAR = 'false'
+DEFAULT_CONF_CALENDAR_LANG = 'en'
 
 #SCAN_INTERVAL = timedelta(hours=1)
 SCAN_INTERVAL = timedelta(hours=1)
@@ -51,6 +53,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
     vol.Optional(CONF_OFFSETDAYS, default=DEFAULT_CONF_OFFSETDAYS): cv.positive_int,
     vol.Optional(CONF_CALENDAR, default=DEFAULT_CONF_CALENDAR): cv.boolean,
+    vol.Optional(CONF_CALENDAR_LANG, default=DEFAULT_CONF_CALENDAR_LANG): cv.string,
 })
 
 @asyncio.coroutine
@@ -61,11 +64,12 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     housenr = config.get(CONF_HOUSENR)
     offsetdays = config.get(CONF_OFFSETDAYS)
     calendar = config.get(CONF_CALENDAR)
+    calendar_lang = config.get(CONF_CALENDAR_LANG)
 
     session = async_get_clientsession(hass)
 
     async_add_devices(
-        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar)],update_before_add=True)
+        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang)],update_before_add=True)
 
 def dconverter(argument):
     switcher = {
@@ -168,7 +172,7 @@ async def async_get_fkfdata(self):
 
 class FKFGarbageCollectionSensor(Entity):
 
-    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar):
+    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang):
         """Initialize the sensor."""
         self._hass = hass
         self._name = name
@@ -183,6 +187,7 @@ class FKFGarbageCollectionSensor(Entity):
         self._next_communal_days = None
         self._next_selective_days = None
         self._calendar = calendar
+        self._calendar_lang = calendar_lang
 
     async def async_added_to_hass(self):
         """When sensor is added to hassio, add it to calendar."""
@@ -231,6 +236,7 @@ class FKFGarbageCollectionSensor(Entity):
 
         attr["next_communal_days"] = self._next_communal_days
         attr["next_selective_days"] = self._next_selective_days
+        attr["calendar_lang"] = self._calendar_lang
 
         attr["provider"] = CONF_ATTRIBUTION
         return attr
@@ -243,7 +249,6 @@ class FKFGarbageCollectionSensor(Entity):
             f"state: {self.state}\n"
             f"config: {self.config}]"
         )
-
 
     @asyncio.coroutine
     async def async_update(self):
