@@ -35,15 +35,17 @@ CONF_NAME = 'name'
 CONF_OFFSETDAYS = 'offsetdays'
 CONF_CALENDAR = 'calendar'
 CONF_CALENDAR_LANG = 'calendar_lang'
+CONF_GREEN = 'green'
 
 DEFAULT_NAME = 'FKF Garbage'
 DEFAULT_ICON = 'mdi:trash-can-outline'
+DEFAULT_ICON_GREEN = 'mdi:leaf'
 DEFAULT_ICON_SELECTIVE = 'mdi:recycle'
 DEFAULT_CONF_OFFSETDAYS = 0
 DEFAULT_CONF_CALENDAR = 'false'
 DEFAULT_CONF_CALENDAR_LANG = 'en'
+DEFAULT_CONF_GREEN = 'false'
 
-#SCAN_INTERVAL = timedelta(hours=1)
 SCAN_INTERVAL = timedelta(hours=1)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -54,6 +56,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_OFFSETDAYS, default=DEFAULT_CONF_OFFSETDAYS): cv.positive_int,
     vol.Optional(CONF_CALENDAR, default=DEFAULT_CONF_CALENDAR): cv.boolean,
     vol.Optional(CONF_CALENDAR_LANG, default=DEFAULT_CONF_CALENDAR_LANG): cv.string,
+    vol.Optional(CONF_GREEN, default=DEFAULT_CONF_GREEN): cv.boolean,
 })
 
 @asyncio.coroutine
@@ -65,11 +68,12 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     offsetdays = config.get(CONF_OFFSETDAYS)
     calendar = config.get(CONF_CALENDAR)
     calendar_lang = config.get(CONF_CALENDAR_LANG)
+    green = config.get(CONF_GREEN)
 
     session = async_get_clientsession(hass)
 
     async_add_devices(
-        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang)],update_before_add=True)
+        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green)],update_before_add=True)
 
 def dconverter(argument):
     switcher = {
@@ -92,10 +96,38 @@ def gconverter(argument):
     }
     return switcher.get(argument)
 
+def _getRomanDistrictFromZip(argument):
+    district10 = int(argument[1:3])
+    districtR = _int_to_Roman(district10)
+    return districtR.lower()
+
+def _int_to_Roman(num):
+    val = [
+         1000, 900, 500, 400,
+         100, 90, 50, 40,
+         10, 9, 5, 4,
+         1
+         ]
+    syb = [
+        "M", "CM", "D", "CD",
+        "C", "XC", "L", "XL",
+        "X", "IX", "V", "IV",
+        "I"
+        ]
+    roman_num = ''
+    i = 0
+    while num > 0:
+        for _ in range(num // val[i]):
+            roman_num += syb[i]
+            num -= val[i]
+        i += 1
+    return roman_num
+
 async def async_get_fkfdata(self):
     payload_key = ["district","publicPlace","houseNumber"]
     october_par = ["ajax/publicPlaces","ajax/houseNumbers","ajax/calSearchResults"]
     october_hnd = ["onSelectDistricts","onSavePublicPlace","onSearch"]
+    weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 
     session = async_get_clientsession(self._hass)
 
@@ -168,11 +200,36 @@ async def async_get_fkfdata(self):
     else:
       _LOGGER.debug("Fetch info for %s/%s/%s: %s", self._zipcode, self._publicplace, self._housenr, s)
 
+    if self._green:
+        url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
+        async with session.get(url) as response:
+            r = await response.text()
+        s = r.replace("\n","").replace("\"","")
+        s1 = re.findall("<strong>[A-ZÁÉÖŐÖÜ]*\ *</strong>",s)
+        s2 = s1[0].replace("<strong>","").replace("</strong>", "") \
+             .replace(" ","").lower().capitalize()
+
+        today_wday = datetime.today().weekday()
+        green_dayEN = dconverter(s2)
+        if green_dayEN != None:
+            gdays = (weekdays.index(green_dayEN) + 7 - today_wday) % 7 - self._offsetdays
+            if gdays < 0:
+                gdays = 0
+            green_date = datetime.strptime(today, date_format) + timedelta(days=gdays)
+            if self._next_green_days == None:
+                self._next_green_days = gdays
+
+            json_data = {"day": green_dayEN, \
+                         "date": green_date.strftime(date_format), \
+                         "garbage": "green", \
+                         "diff": gdays}
+            json_data_list.append(json_data)
+
     return json_data_list
 
 class FKFGarbageCollectionSensor(Entity):
 
-    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang):
+    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green):
         """Initialize the sensor."""
         self._hass = hass
         self._name = name
@@ -185,9 +242,11 @@ class FKFGarbageCollectionSensor(Entity):
         self._offsetdays = offsetdays
         self._icon = DEFAULT_ICON
         self._next_communal_days = None
+        self._next_green_days = None
         self._next_selective_days = None
         self._calendar = calendar
         self._calendar_lang = calendar_lang
+        self._green = green
 
     async def async_added_to_hass(self):
         """When sensor is added to hassio, add it to calendar."""
@@ -235,6 +294,7 @@ class FKFGarbageCollectionSensor(Entity):
             i += 1
 
         attr["next_communal_days"] = self._next_communal_days
+        attr["next_green_days"] = self._next_green_days
         attr["next_selective_days"] = self._next_selective_days
         attr["calendar_lang"] = self._calendar_lang
 
@@ -253,13 +313,16 @@ class FKFGarbageCollectionSensor(Entity):
     @asyncio.coroutine
     async def async_update(self):
         self._next_communal_days = None
+        self._next_green_days = None
         self._next_selective_days = None
 
         fkfdata = await async_get_fkfdata(self)
 
         if len(fkfdata) != 0:
            self._fkfdata = fkfdata
-           self._state = self._fkfdata[0]['diff']
+           self._state = min(int(200 if self._next_communal_days is None else self._next_communal_days), \
+                             int(200 if self._next_green_days is None else self._next_green_days), \
+                             int(200 if self._next_selective_days is None else self._next_selective_days))
            self._current = "current"
         else:
            self._current = "not_current"
@@ -277,5 +340,7 @@ class FKFGarbageCollectionSensor(Entity):
     def icon(self):
         if self._fkfdata[0]['garbage'] == "communal":
             return DEFAULT_ICON
+        elif self._fkfdata[0]['garbage'] == "green":
+            return DEFAULT_ICON_GREEN
         else:
             return DEFAULT_ICON_SELECTIVE
