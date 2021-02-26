@@ -128,8 +128,31 @@ async def async_get_fkfdata(self):
     october_par = ["ajax/publicPlaces","ajax/houseNumbers","ajax/calSearchResults"]
     october_hnd = ["onSelectDistricts","onSavePublicPlace","onSearch"]
     weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+    green_dayEN = None
+    green_not_added = True
 
     session = async_get_clientsession(self._hass)
+    date_format = "%Y.%m.%d"
+    today = datetime.today().strftime(date_format)
+
+    if self._green:
+        url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
+        async with session.get(url) as response:
+            r = await response.text()
+        s = r.replace("\n","").replace("\"","")
+        s1 = re.findall("<strong>[A-ZÁÉÖŐÖÜ]*\ *</strong>",s)
+        s2 = s1[0].replace("<strong>","").replace("</strong>", "") \
+             .replace(" ","").lower().capitalize()
+
+        today_wday = datetime.today().weekday()
+        green_dayEN = dconverter(s2)
+        if green_dayEN != None:
+            green_day_diff = (weekdays.index(green_dayEN) + 7 - today_wday) % 7 - self._offsetdays
+            if green_day_diff < 0:
+                green_day_diff = 0
+            green_date = datetime.strptime(today, date_format) + timedelta(days=green_day_diff)
+            if self._next_green_days == None:
+                self._next_green_days = green_day_diff
 
     url = 'https://www.fkf.hu/'
     async with session.get(url) as response:
@@ -152,9 +175,6 @@ async def async_get_fkfdata(self):
              'Cookie': cookie}
        async with session.post(url, data=payload, headers=headers) as response:
           fdata = await response.json()
-
-    date_format = "%Y.%m.%d"
-    today = datetime.today().strftime(date_format)
 
     s = fdata["ajax/calSearchResults"].replace("\n","").replace("\"","")
     s1 = re.sub("\s{2,}"," ",s)
@@ -192,6 +212,17 @@ async def async_get_fkfdata(self):
               if self._next_communal_days == None:
                 self._next_communal_days = gdays
 
+            if self._green and self._next_green_days != None:
+                if gdays == green_day_diff:
+                    gtype += "_green"
+                elif green_day_diff < gdays and green_not_added:
+                    json_data = {"day": green_dayEN, \
+                                 "date": green_date.strftime(date_format), \
+                                 "garbage": "green", \
+                                 "diff": self._next_green_days}
+                    json_data_list.append(json_data)
+                    green_not_added = False
+
             json_data = {"day": dconverter(gday[i]), \
                          "date": gdate[i], \
                          "garbage": gtype, \
@@ -199,31 +230,6 @@ async def async_get_fkfdata(self):
             json_data_list.append(json_data)
     else:
       _LOGGER.debug("Fetch info for %s/%s/%s: %s", self._zipcode, self._publicplace, self._housenr, s)
-
-    if self._green:
-        url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
-        async with session.get(url) as response:
-            r = await response.text()
-        s = r.replace("\n","").replace("\"","")
-        s1 = re.findall("<strong>[A-ZÁÉÖŐÖÜ]*\ *</strong>",s)
-        s2 = s1[0].replace("<strong>","").replace("</strong>", "") \
-             .replace(" ","").lower().capitalize()
-
-        today_wday = datetime.today().weekday()
-        green_dayEN = dconverter(s2)
-        if green_dayEN != None:
-            gdays = (weekdays.index(green_dayEN) + 7 - today_wday) % 7 - self._offsetdays
-            if gdays < 0:
-                gdays = 0
-            green_date = datetime.strptime(today, date_format) + timedelta(days=gdays)
-            if self._next_green_days == None:
-                self._next_green_days = gdays
-
-            json_data = {"day": green_dayEN, \
-                         "date": green_date.strftime(date_format), \
-                         "garbage": "green", \
-                         "diff": gdays}
-            json_data_list.append(json_data)
 
     return json_data_list
 
