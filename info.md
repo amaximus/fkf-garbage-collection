@@ -4,15 +4,16 @@
 
 # FKF Budapest Garbage Collection custom component for Home Assistant
 
-This custom component gathers garbage collection schedule from FKF Budapest Department of Public
-for a configurable address.
+This custom component provides garbage collection schedule from FKF Budapest Department of Public
+for a configurable address. It also supports green garbage collection schedule (FKF Budapest treats
+it differently)
 
 The state of the sensor will be the number of days to the first upcoming garbage collection date.
 
 The sensor will also report in an attribute the status of the latest data fetch.
 
 The FKF Garbage Collection sensors can also be added to appear in HASS calendar. Calendar entries will be prefixed
-with the friendly name of the sensor to support and distinguish schedule for multiple such sensors. Translation of
+with the friendly name of the sensor to support and distinguish schedule for multiple such sensors/addresses. Translation of
 the calendar entries is also available through the calendar_lang option; so far only Hungarian and English are supported.
 Language tags should follow [IANA subtag registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry).
 
@@ -35,6 +36,7 @@ Define sensors with the following configuration parameters according to [FKF Hul
 | offsetdays | **Y** | `0` | Optional offset for the number of days left (usually 1) |
 | calendar | **Y** | `false` | Show FKF schedule in calendar |
 | calendar_lang | **Y** | `en` | Language to display garbage type in calendar |
+| green | **Y** | `false` | Include green garbage schedule as well |
 ---
 
 #### Example
