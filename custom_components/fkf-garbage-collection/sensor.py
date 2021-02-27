@@ -91,8 +91,8 @@ def gconverter(argument):
     switcher = {
       "Szelektív": "selective",
       "Kommunális": "communal",
-      'Szelektív Kommunális': "both",
-      'Kommunális Szelektív': "both"
+      'Szelektív Kommunális': "communal_selective",
+      'Kommunális Szelektív': "communal_selective"
     }
     return switcher.get(argument)
 
@@ -207,7 +207,7 @@ async def async_get_fkfdata(self):
               self._next_selective_days = gdays
             if gtype == "communal" and self._next_communal_days == None:
               self._next_communal_days = gdays
-            if gtype == "both" and self._next_selective_days == None:
+            if gtype == "communal_selective" and self._next_selective_days == None:
               self._next_selective_days = gdays
               if self._next_communal_days == None:
                 self._next_communal_days = gdays
