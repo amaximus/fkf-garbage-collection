@@ -18,7 +18,7 @@ the calendar entries is also available through the calendar_lang option; so far 
 Language tags should follow [IANA subtag registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry).
 
 #### Installation
-The easiest way to install it is through [HACS (Home Assistant Community Store)](https://custom-components.github.io/hacs/),
+The easiest way to install it is through [HACS (Home Assistant Community Store)](https://github.com/hacs/integration),
 search for <i>FKF Budapest Garbage</i> in the Integrations.<br />
 
 Sensors of this platform should be configured as per below information.
