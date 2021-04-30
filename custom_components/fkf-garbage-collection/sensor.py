@@ -70,8 +70,6 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     calendar_lang = config.get(CONF_CALENDAR_LANG)
     green = config.get(CONF_GREEN)
 
-    session = async_get_clientsession(hass)
-
     async_add_devices(
         [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green)],update_before_add=True)
 
@@ -131,13 +129,12 @@ async def async_get_fkfdata(self):
     green_dayEN = None
     green_not_added = True
 
-    session = async_get_clientsession(self._hass)
     date_format = "%Y.%m.%d"
     today = datetime.today().strftime(date_format)
 
     if self._green:
         url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
-        async with session.get(url) as response:
+        async with self._session.get(url) as response:
             r = await response.text()
         s = r.replace("\n","").replace("\"","")
         s1 = re.findall("<strong>[A-ZÁÉÖŐÖÜ]*\ *</strong>",s)
@@ -155,7 +152,7 @@ async def async_get_fkfdata(self):
                 self._next_green_days = green_day_diff
 
     url = 'https://www.fkf.hu/'
-    async with session.get(url) as response:
+    async with self._session.get(url) as response:
       r = await response.text()
       cookie = response.headers['Set-Cookie']
 
@@ -173,7 +170,7 @@ async def async_get_fkfdata(self):
              'Sec-Fetch-Dest': 'empty', \
              'X-Requested-With': 'XMLHttpRequest', \
              'Cookie': cookie}
-       async with session.post(url, data=payload, headers=headers) as response:
+       async with self._session.post(url, data=payload, headers=headers) as response:
           fdata = await response.json()
 
     s = fdata["ajax/calSearchResults"].replace("\n","").replace("\"","")
@@ -253,6 +250,7 @@ class FKFGarbageCollectionSensor(Entity):
         self._calendar = calendar
         self._calendar_lang = calendar_lang
         self._green = green
+        self._session = async_get_clientsession(self._hass)
 
     async def async_added_to_hass(self):
         """When sensor is added to hassio, add it to calendar."""
