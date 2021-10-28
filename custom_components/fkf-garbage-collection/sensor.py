@@ -36,6 +36,7 @@ CONF_OFFSETDAYS = 'offsetdays'
 CONF_CALENDAR = 'calendar'
 CONF_CALENDAR_LANG = 'calendar_lang'
 CONF_GREEN = 'green'
+CONF_GREENCOLOR = 'greencolor'
 
 DEFAULT_NAME = 'FKF Garbage'
 DEFAULT_ICON = 'mdi:trash-can-outline'
@@ -45,6 +46,7 @@ DEFAULT_CONF_OFFSETDAYS = 0
 DEFAULT_CONF_CALENDAR = 'false'
 DEFAULT_CONF_CALENDAR_LANG = 'en'
 DEFAULT_CONF_GREEN = 'false'
+DEFAULT_CONF_GREENCOLOR = ''
 
 SCAN_INTERVAL = timedelta(hours=1)
 
@@ -57,7 +59,11 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_CALENDAR, default=DEFAULT_CONF_CALENDAR): cv.boolean,
     vol.Optional(CONF_CALENDAR_LANG, default=DEFAULT_CONF_CALENDAR_LANG): cv.string,
     vol.Optional(CONF_GREEN, default=DEFAULT_CONF_GREEN): cv.boolean,
+    vol.Optional(CONF_GREENCOLOR, default=DEFAULT_CONF_GREENCOLOR): cv.string,
 })
+
+MAR1 = 60
+DEC3 = 337
 
 @asyncio.coroutine
 def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
@@ -69,19 +75,20 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     calendar = config.get(CONF_CALENDAR)
     calendar_lang = config.get(CONF_CALENDAR_LANG)
     green = config.get(CONF_GREEN)
+    greencolor = config.get(CONF_GREENCOLOR)
 
     async_add_devices(
-        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green)],update_before_add=True)
+        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor)],update_before_add=True)
 
 def dconverter(argument):
     switcher = {
-      "Hétfő": "Monday",
-      "Kedd": "Tuesday",
-      "Szerda": "Wednesday",
-      "Csütörtök": "Thursday",
-      "Péntek": "Friday",
-      "Szombat": "Saturday",
-      "Vasárnap": "Sunday"
+      'Csütörtök': 'Thursday',
+      'Hétfő': 'Monday',
+      'Kedd': 'Tuesday',
+      'Péntek': 'Friday',
+      'Szerda': 'Wednesday',
+      'Szombat': 'Saturday',
+      'Vasárnap': 'Sunday'
     }
     return switcher.get(argument)
 
@@ -128,18 +135,35 @@ async def async_get_fkfdata(self):
     weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
     green_dayEN = None
     green_not_added = True
+    s2 = ""
 
     date_format = "%Y.%m.%d"
     today = datetime.today().strftime(date_format)
+    if int(datetime.today().strftime('%j')) < MAR1 or int(datetime.today().strftime('%j')) > DEC3:
+      self._green = False
 
     if self._green:
         url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
         async with self._session.get(url) as response:
             r = await response.text()
-        s = r.replace("\n","").replace("\"","")
-        s1 = re.findall("<strong>[A-ZÁÉÖŐÖÜ]*\ *</strong>",s)
-        s2 = s1[0].replace("<strong>","").replace("</strong>", "") \
-             .replace(" ","").lower().capitalize()
+        s = r.replace("\r","").split("\n")
+
+        CLEANHTML = re.compile('<.*?>')
+
+        for ind,line in enumerate(s):
+          if not self._greencolor:
+            matchre = re.compile('<strong>[A-ZÁÉÖŐÖÜ]*\ *</strong>')
+            m = re.search(matchre,line)
+            if m != None:
+              s2 = re.sub(CLEANHTML,'',line.replace("&nbsp;","").replace("\t","")) \
+                   .lower().capitalize()
+              break
+          else:
+            matchstr = "storage/app/media/uploaded-files/" + self._greencolor
+            if matchstr in line:
+              s2 = re.sub(CLEANHTML,'',s[ind+1]).replace("&nbsp;","").replace("\t","") \
+                   .lower().capitalize()
+              break
 
         today_wday = datetime.today().weekday()
         green_dayEN = dconverter(s2)
@@ -232,7 +256,7 @@ async def async_get_fkfdata(self):
 
 class FKFGarbageCollectionSensor(Entity):
 
-    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green):
+    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor):
         """Initialize the sensor."""
         self._hass = hass
         self._name = name
@@ -250,6 +274,7 @@ class FKFGarbageCollectionSensor(Entity):
         self._calendar = calendar
         self._calendar_lang = calendar_lang
         self._green = green
+        self._greencolor = greencolor
         self._session = async_get_clientsession(self._hass)
 
     async def async_added_to_hass(self):
@@ -298,7 +323,8 @@ class FKFGarbageCollectionSensor(Entity):
             i += 1
 
         attr["next_communal_days"] = self._next_communal_days
-        attr["next_green_days"] = self._next_green_days
+        if self._next_green_days != None:
+          attr["next_green_days"] = self._next_green_days
         attr["next_selective_days"] = self._next_selective_days
         attr["calendar_lang"] = self._calendar_lang
 

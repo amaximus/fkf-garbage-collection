@@ -37,7 +37,12 @@ Define sensors with the following configuration parameters according to [FKF Hul
 | calendar | **Y** | `false` | Show FKF schedule in calendar |
 | calendar_lang | **Y** | `en` | Language to display garbage type in calendar |
 | green | **Y** | `false` | Include green garbage schedule as well |
+| greencolor | **Y** | `` | Use map color for districts that have different green garbage collecting days per region (see below) |
 ---
+
+For green garbage collection, `greencolor`, if defined, takes precedence over `publicplace`-`housenr`. Color name can be fetched from the source of the webpage `www.fkf.hu/kerti-zoldhulladek-korzetek-<districts_roman_number>-kerulet` and is one of these: `kek`, 'lila', `narancs`, `rozsaszin`, `sarga`. `greencolor` is not necessary if the whole district has green garbage collection on one specific day.
+
+Green garbage collection related attribute will not be included when the green garbage collection service is suspended during winter time ([FKF Zöldhulladék](https://www.fkf.hu/kerti-zoldhulladek-gyujtes)).
 
 #### Example
 ```
