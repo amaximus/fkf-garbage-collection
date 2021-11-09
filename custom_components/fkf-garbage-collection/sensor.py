@@ -136,6 +136,8 @@ async def async_get_fkfdata(self):
     green_dayEN = None
     green_not_added = True
     s2 = ""
+    fdata = {}
+    tr_elements = []
 
     date_format = "%Y.%m.%d"
     today = datetime.today().strftime(date_format)
@@ -144,9 +146,13 @@ async def async_get_fkfdata(self):
 
     if self._green:
         url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
-        async with self._session.get(url) as response:
-            r = await response.text()
-        s = r.replace("\r","").split("\n")
+        try:
+            async with self._session.get(url) as response:
+                r = await response.text()
+                s = r.replace("\r","").split("\n")
+        except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError):
+           _LOGGER.debug("Connection error to fkf.hu")
+           s = ""
 
         CLEANHTML = re.compile('<.*?>')
 
@@ -194,20 +200,26 @@ async def async_get_fkfdata(self):
              'Sec-Fetch-Dest': 'empty', \
              'X-Requested-With': 'XMLHttpRequest', \
              'Cookie': cookie}
-       async with self._session.post(url, data=payload, headers=headers) as response:
-          fdata = await response.json()
+       try:
+           async with self._session.post(url, data=payload, headers=headers) as response:
+               fdata = await response.json()
+       except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError):
+           _LOGGER.debug("Connection error to fkf.hu")
+           break
 
-    s = fdata["ajax/calSearchResults"].replace("\n","").replace("\"","")
-    s1 = re.sub("\s{2,}"," ",s)
-    s = s1.replace("<div class=communal d-inline-block><i class=fas fa-trash fa-lg mr-2><","") \
-          .replace("<div class=selective d-inline-block><i class=fas fa-trash fa-lg><","") \
-          .replace("<i class=fas fa-trash fa-lg mr-2><","") \
-          .replace("</div>","") \
-          .replace("colspan=3><hr class=white m-0","") \
-          .replace("/i>","")
+    if 'ajax/calSearchResults' in fdata:
+        _LOGGER.debug("in ajax")
+        s = fdata["ajax/calSearchResults"].replace("\n","").replace("\"","")
+        s1 = re.sub("\s{2,}"," ",s)
+        s = s1.replace("<div class=communal d-inline-block><i class=fas fa-trash fa-lg mr-2><","") \
+              .replace("<div class=selective d-inline-block><i class=fas fa-trash fa-lg><","") \
+              .replace("<i class=fas fa-trash fa-lg mr-2><","") \
+              .replace("</div>","") \
+              .replace("colspan=3><hr class=white m-0","") \
+              .replace("/i>","")
 
-    doc = lh.fromstring(s)
-    tr_elements = doc.xpath('//tr')
+        doc = lh.fromstring(s)
+        tr_elements = doc.xpath('//tr')
 
     json_data_list = []
     if len(tr_elements) > 0:
@@ -248,10 +260,11 @@ async def async_get_fkfdata(self):
                          "date": gdate[i], \
                          "garbage": gtype, \
                          "diff": gdays}
-            json_data_list.append(json_data)
     else:
+      json_data = {}
       _LOGGER.debug("Fetch info for %s/%s/%s: %s", self._zipcode, self._publicplace, self._housenr, s)
 
+    json_data_list.append(json_data)
     return json_data_list
 
 class FKFGarbageCollectionSensor(Entity):
@@ -310,10 +323,9 @@ class FKFGarbageCollectionSensor(Entity):
     @property
     def device_state_attributes(self):
         attr = {}
-
-        attr["items"] = len(self._fkfdata)
-        attr["current"] = self._current
-        if attr["items"] != 0:
+        if 'diff' in self._fkfdata[0]:
+          attr["items"] = len(self._fkfdata)
+          attr["current"] = self._current
           i = 0
           while i < len(self._fkfdata):
             attr['in' + str(i)] = self._fkfdata[i]['diff']
@@ -324,7 +336,7 @@ class FKFGarbageCollectionSensor(Entity):
 
         attr["next_communal_days"] = self._next_communal_days
         if self._next_green_days != None:
-          attr["next_green_days"] = self._next_green_days
+            attr["next_green_days"] = self._next_green_days
         attr["next_selective_days"] = self._next_selective_days
         attr["calendar_lang"] = self._calendar_lang
 
@@ -353,6 +365,8 @@ class FKFGarbageCollectionSensor(Entity):
            self._state = min(int(200 if self._next_communal_days is None else self._next_communal_days), \
                              int(200 if self._next_green_days is None else self._next_green_days), \
                              int(200 if self._next_selective_days is None else self._next_selective_days))
+           if self._state == 200:
+               self._state = "unknown"
            self._current = "current"
         else:
            self._current = "not_current"
@@ -368,9 +382,12 @@ class FKFGarbageCollectionSensor(Entity):
 
     @property
     def icon(self):
-        if self._fkfdata[0]['garbage'] == "communal":
-            return DEFAULT_ICON
-        elif self._fkfdata[0]['garbage'] == "green":
-            return DEFAULT_ICON_GREEN
+        if 'garbage' in self._fkfdata[0]:
+            if self._fkfdata[0]['garbage'] == "communal":
+                return DEFAULT_ICON
+            elif self._fkfdata[0]['garbage'] == "green":
+                return DEFAULT_ICON_GREEN
+            else:
+                return DEFAULT_ICON_SELECTIVE
         else:
-            return DEFAULT_ICON_SELECTIVE
+            return DEFAULT_ICON

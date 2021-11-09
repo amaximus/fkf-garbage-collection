@@ -157,6 +157,8 @@ class EntitiesCalendarData:
         for entity in self.entities:
           if entity not in self._hass.data[DOMAIN][SENSOR_PLATFORM]:
             continue
+          if self._hass.states.get(entity) is None:
+            continue
           attributes = self._hass.states.get(entity).attributes
           for key in attributes:
             x = re.search('^date', key)
