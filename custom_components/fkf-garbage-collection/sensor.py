@@ -208,7 +208,6 @@ async def async_get_fkfdata(self):
            break
 
     if 'ajax/calSearchResults' in fdata:
-        _LOGGER.debug("in ajax")
         s = fdata["ajax/calSearchResults"].replace("\n","").replace("\"","")
         s1 = re.sub("\s{2,}"," ",s)
         s = s1.replace("<div class=communal d-inline-block><i class=fas fa-trash fa-lg mr-2><","") \
@@ -260,11 +259,12 @@ async def async_get_fkfdata(self):
                          "date": gdate[i], \
                          "garbage": gtype, \
                          "diff": gdays}
+            json_data_list.append(json_data)
     else:
       json_data = {}
       _LOGGER.debug("Fetch info for %s/%s/%s: %s", self._zipcode, self._publicplace, self._housenr, s)
+      json_data_list.append(json_data)
 
-    json_data_list.append(json_data)
     return json_data_list
 
 class FKFGarbageCollectionSensor(Entity):
@@ -327,6 +327,7 @@ class FKFGarbageCollectionSensor(Entity):
           attr["items"] = len(self._fkfdata)
           attr["current"] = self._current
           i = 0
+
           while i < len(self._fkfdata):
             attr['in' + str(i)] = self._fkfdata[i]['diff']
             attr['day' + str(i)] = self._fkfdata[i]['day']
