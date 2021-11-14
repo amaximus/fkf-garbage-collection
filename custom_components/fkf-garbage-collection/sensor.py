@@ -138,6 +138,7 @@ async def async_get_fkfdata(self):
     s2 = ""
     fdata = {}
     tr_elements = []
+    cookie = ""
 
     date_format = "%Y.%m.%d"
     today = datetime.today().strftime(date_format)
@@ -182,30 +183,34 @@ async def async_get_fkfdata(self):
                 self._next_green_days = green_day_diff
 
     url = 'https://www.fkf.hu/'
-    async with self._session.get(url) as response:
-      r = await response.text()
-      cookie = response.headers['Set-Cookie']
+    try:
+        async with self._session.get(url) as response:
+            r = await response.text()
+            cookie = response.headers['Set-Cookie']
+    except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError):
+        _LOGGER.debug("Connection error to fkf.hu")
 
     url = 'https://www.fkf.hu/hulladeknaptar'
 
     payload_val = [self._zipcode, self._publicplace, self._housenr]
 
-    for i in range(len(payload_key)):
-       payload = {payload_key[i]: payload_val[i]}
-       headers = {'X-OCTOBER-REQUEST-PARTIALS': october_par[i], \
-             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36', \
-             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', \
-             'X-OCTOBER-REQUEST-HANDLER': october_hnd[i], \
-             'Accept': '*/*', \
-             'Sec-Fetch-Dest': 'empty', \
-             'X-Requested-With': 'XMLHttpRequest', \
-             'Cookie': cookie}
-       try:
-           async with self._session.post(url, data=payload, headers=headers) as response:
-               fdata = await response.json()
-       except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError):
-           _LOGGER.debug("Connection error to fkf.hu")
-           break
+    if len(cookie) != 0:
+        for i in range(len(payload_key)):
+            payload = {payload_key[i]: payload_val[i]}
+            headers = {'X-OCTOBER-REQUEST-PARTIALS': october_par[i], \
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36', \
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', \
+                'X-OCTOBER-REQUEST-HANDLER': october_hnd[i], \
+                'Accept': '*/*', \
+                'Sec-Fetch-Dest': 'empty', \
+                'X-Requested-With': 'XMLHttpRequest', \
+                'Cookie': cookie}
+            try:
+                async with self._session.post(url, data=payload, headers=headers) as response:
+                    fdata = await response.json()
+            except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError):
+                _LOGGER.debug("Connection error to fkf.hu")
+                break
 
     if 'ajax/calSearchResults' in fdata:
         s = fdata["ajax/calSearchResults"].replace("\n","").replace("\"","")
