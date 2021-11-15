@@ -294,6 +294,7 @@ class FKFGarbageCollectionSensor(Entity):
         self._green = green
         self._greencolor = greencolor
         self._session = async_get_clientsession(self._hass)
+        self._attr = {}
 
     async def async_added_to_hass(self):
         """When sensor is added to hassio, add it to calendar."""
@@ -327,27 +328,27 @@ class FKFGarbageCollectionSensor(Entity):
 
     @property
     def device_state_attributes(self):
-        attr = {}
         if 'diff' in self._fkfdata[0]:
-          attr["items"] = len(self._fkfdata)
-          attr["current"] = self._current
           i = 0
 
+          self._attr["items"] = len(self._fkfdata)
+
           while i < len(self._fkfdata):
-            attr['in' + str(i)] = self._fkfdata[i]['diff']
-            attr['day' + str(i)] = self._fkfdata[i]['day']
-            attr['date' + str(i)] = self._fkfdata[i]['date']
-            attr['garbage' + str(i)] = self._fkfdata[i]['garbage']
+            self._attr['in' + str(i)] = self._fkfdata[i]['diff']
+            self._attr['day' + str(i)] = self._fkfdata[i]['day']
+            self._attr['date' + str(i)] = self._fkfdata[i]['date']
+            self._attr['garbage' + str(i)] = self._fkfdata[i]['garbage']
             i += 1
 
-        attr["next_communal_days"] = self._next_communal_days
+        self._attr["current"] = self._current
+        self._attr["next_communal_days"] = self._next_communal_days
         if self._next_green_days != None:
-            attr["next_green_days"] = self._next_green_days
-        attr["next_selective_days"] = self._next_selective_days
-        attr["calendar_lang"] = self._calendar_lang
+            self._attr["next_green_days"] = self._next_green_days
+        self._attr["next_selective_days"] = self._next_selective_days
+        self._attr["calendar_lang"] = self._calendar_lang
 
-        attr["provider"] = CONF_ATTRIBUTION
-        return attr
+        self._attr["provider"] = CONF_ATTRIBUTION
+        return self._attr
 
     def __repr__(self):
         """Return main sensor parameters."""
@@ -375,7 +376,7 @@ class FKFGarbageCollectionSensor(Entity):
                self._state = "unknown"
            self._current = "current"
         else:
-           self._current = "not_current"
+           self._current = "false"
         return self._state
 
     @property
