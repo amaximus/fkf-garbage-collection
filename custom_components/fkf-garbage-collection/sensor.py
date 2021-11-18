@@ -151,7 +151,7 @@ async def async_get_fkfdata(self):
             async with self._session.get(url) as response:
                 r = await response.text()
                 s = r.replace("\r","").split("\n")
-        except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError):
+        except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
            _LOGGER.debug("Connection error to fkf.hu")
            s = ""
 
@@ -187,7 +187,7 @@ async def async_get_fkfdata(self):
         async with self._session.get(url) as response:
             r = await response.text()
             cookie = response.headers['Set-Cookie']
-    except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError):
+    except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
         _LOGGER.debug("Connection error to fkf.hu")
 
     url = 'https://www.fkf.hu/hulladeknaptar'
@@ -208,7 +208,7 @@ async def async_get_fkfdata(self):
             try:
                 async with self._session.post(url, data=payload, headers=headers) as response:
                     fdata = await response.json()
-            except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError):
+            except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
                 _LOGGER.debug("Connection error to fkf.hu")
                 break
 
