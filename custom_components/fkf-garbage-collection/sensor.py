@@ -48,6 +48,7 @@ DEFAULT_CONF_CALENDAR_LANG = 'en'
 DEFAULT_CONF_GREEN = 'false'
 DEFAULT_CONF_GREENCOLOR = ''
 
+HTTP_TIMEOUT = 5 # secs
 SCAN_INTERVAL = timedelta(hours=1)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -148,7 +149,7 @@ async def async_get_fkfdata(self):
     if self._green:
         url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
         try:
-            async with self._session.get(url) as response:
+            async with self._session.get(url, timeout=HTTP_TIMEOUT) as response:
                 r = await response.text()
                 s = r.replace("\r","").split("\n")
         except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
@@ -184,7 +185,7 @@ async def async_get_fkfdata(self):
 
     url = 'https://www.fkf.hu/'
     try:
-        async with self._session.get(url) as response:
+        async with self._session.get(url, timeout=HTTP_TIMEOUT) as response:
             r = await response.text()
             cookie = response.headers['Set-Cookie']
     except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
@@ -206,7 +207,7 @@ async def async_get_fkfdata(self):
                 'X-Requested-With': 'XMLHttpRequest', \
                 'Cookie': cookie}
             try:
-                async with self._session.post(url, data=payload, headers=headers) as response:
+                async with self._session.post(url, data=payload, headers=headers, timeout=HTTP_TIMEOUT) as response:
                     fdata = await response.json()
             except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
                 _LOGGER.debug("Connection error to fkf.hu")
