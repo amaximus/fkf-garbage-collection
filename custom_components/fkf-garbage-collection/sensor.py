@@ -329,7 +329,7 @@ class FKFGarbageCollectionSensor(Entity):
         self.hass.data[DOMAIN][CALENDAR_PLATFORM].remove_entity(self.entity_id)
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         if 'diff' in self._fkfdata[0]:
           i = 0
 
