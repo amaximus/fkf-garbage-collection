@@ -1,8 +1,8 @@
 {
   "fkf-garbage-collection": {
-    "version": "0.4.5",
-    "updated_at": "2021-12-06",
+    "version": "0.4.6",
+    "updated_at": "2021-12-13",
     "visit_repo": "https://github.com/amaximus/fkf-garbage-collection",
-    "changelog": "https://github.com/amaximus/fkf-garbage-collection/releases/0.4.4"
+    "changelog": "https://github.com/amaximus/fkf-garbage-collection/releases/0.4.6"
   }
 }

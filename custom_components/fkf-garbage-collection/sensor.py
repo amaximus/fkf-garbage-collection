@@ -136,6 +136,7 @@ async def async_get_fkfdata(self):
     weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
     green_dayEN = None
     green_not_added = True
+    s = ""
     s2 = ""
     fdata = {}
     tr_elements = []
