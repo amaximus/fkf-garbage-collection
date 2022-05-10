@@ -4,7 +4,8 @@ import logging
 import re
 from datetime import datetime, timedelta
 
-from homeassistant.components.calendar import CalendarEventDevice
+from homeassistant.components.calendar import CalendarEntity, CalendarEvent
+from homeassistant.core import HomeAssistant
 from homeassistant.util import Throttle
 
 from .const import CALENDAR_NAME, CALENDAR_PLATFORM, DOMAIN, SENSOR_PLATFORM
@@ -20,7 +21,7 @@ async def async_setup_platform(
     if FKFGarbageCollectionCalendar.instances == 0:
         async_add_entities([FKFGarbageCollectionCalendar(hass)], True)
 
-class FKFGarbageCollectionCalendar(CalendarEventDevice):
+class FKFGarbageCollectionCalendar(CalendarEntity):
     """The garbage collection calendar class."""
 
     instances = 0
@@ -64,7 +65,7 @@ class EntitiesCalendarData:
 
     def __init__(self, hass):
         """Initialize an Entities Calendar Data."""
-        self.event = None
+        self.event: CalendarEvent | None = None
         self._hass = hass
         self.entities = []
         self._translation = {
@@ -96,9 +97,9 @@ class EntitiesCalendarData:
         gtranslated = gtranslated[:-1]
         return gtranslated
 
-    async def async_get_events(self, hass, start_datetime, end_datetime):
+    async def async_get_events(self, hass: HomeAssistant, start_datetime: datetime, end_datetime: datetime) -> list[CalendarEvent]:
         """Get all tasks in a specific time frame."""
-        events = []
+        events: list[CalendarEvent] = []
         startdates = {}
         garbages = {}
         calendar_lang = "en"
@@ -147,7 +148,7 @@ class EntitiesCalendarData:
         return events
 
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
-    async def async_update(self):
+    async def async_update(self) -> None:
         """Get the latest data."""
         next_dates = {}
         garbages = {}
@@ -181,16 +182,14 @@ class EntitiesCalendarData:
           start = next_dates[str(idx)]
           end = start + timedelta(days=1)
           if calendar_lang in self._translation:
-            name = self._split_and_translate(calendar_lang, garbages[str(idx)])
+            name = friendly_name + ": " + self._split_and_translate(calendar_lang, garbages[str(idx)])
           else:
-            name = self._split_and_translate("en", garbages[str(idx)])
+            name = friendly_name + ": " + self._split_and_translate("en", garbages[str(idx)])
 
           _LOGGER.debug("async_update: %s s: %s, e: %s, type: %s", friendly_name, start.strftime("%Y.%m.%d"), end.strftime("%Y.%m.%d"),name)
 
-          self.event = {
-            "uid": str(idx),
-            "summary": friendly_name + ": " + name,
-            "start": {"date": start.strftime("%Y-%m-%d")},
-            "end": {"date": end.strftime("%Y-%m-%d")},
-            "allDay": True,
-          }
+          self.event = CalendarEvent(
+            summary=name,
+            start=start,
+            end=end,
+          )
