@@ -46,11 +46,12 @@ Green garbage collection related attribute will not be included when the green g
 
 #### Example
 ```
-platform: fkf_garbage_collection
-name: 'fkf_my_schedule'
-zipcode: '1013'
-publicplace: 'Attila út'
-housenr: '69'
+sensor:
+- platform: fkf_garbage_collection
+  name: 'fkf_my_schedule'
+  zipcode: '1013'
+  publicplace: 'Attila út'
+  housenr: '69'
 ```
 
 #### Lovelace UI
