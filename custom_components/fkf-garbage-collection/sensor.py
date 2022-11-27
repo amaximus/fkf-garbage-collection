@@ -156,6 +156,7 @@ async def async_get_fkfdata(self):
         except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
            _LOGGER.debug("Connection error to fkf.hu")
            s = ""
+           self._green = False
 
         CLEANHTML = re.compile('<.*?>')
 
@@ -174,15 +175,16 @@ async def async_get_fkfdata(self):
                    .lower().capitalize()
               break
 
-        today_wday = datetime.today().weekday()
-        green_dayEN = dconverter(s2)
-        if green_dayEN != None:
+        if self._green:
+          today_wday = datetime.today().weekday()
+          green_dayEN = dconverter(s2)
+          if green_dayEN != None:
             green_day_diff = (weekdays.index(green_dayEN) + 7 - today_wday) % 7 - self._offsetdays
             if green_day_diff < 0:
-                green_day_diff = 0
+              green_day_diff = 0
             green_date = datetime.strptime(today, date_format) + timedelta(days=green_day_diff)
             if self._next_green_days == None:
-                self._next_green_days = green_day_diff
+              self._next_green_days = green_day_diff
 
     url = 'https://www.fkf.hu/'
     try:
@@ -344,8 +346,8 @@ class FKFGarbageCollectionSensor(Entity):
 
         self._attr["current"] = self._current
         self._attr["next_communal_days"] = self._next_communal_days
-        if self._next_green_days != None:
-            self._attr["next_green_days"] = self._next_green_days
+        if self._next_green_days is not None:
+          self._attr["next_green_days"] = self._next_green_days
         self._attr["next_selective_days"] = self._next_selective_days
         self._attr["calendar_lang"] = self._calendar_lang
 
