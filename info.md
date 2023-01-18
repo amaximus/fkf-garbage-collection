@@ -1,4 +1,4 @@
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
 
 <p><a href="https://www.buymeacoffee.com/6rF5cQl" rel="nofollow" target="_blank"><img src="https://camo.githubusercontent.com/c070316e7fb193354999ef4c93df4bd8e21522fa/68747470733a2f2f696d672e736869656c64732e696f2f7374617469632f76312e7376673f6c6162656c3d4275792532306d6525323061253230636f66666565266d6573736167653d25463025394625413525413826636f6c6f723d626c61636b266c6f676f3d6275792532306d6525323061253230636f66666565266c6f676f436f6c6f723d7768697465266c6162656c436f6c6f723d366634653337" alt="Buy me a coffee" data-canonical-src="https://img.shields.io/static/v1.svg?label=Buy%20me%20a%20coffee&amp;message=%F0%9F%A5%A8&amp;color=black&amp;logo=buy%20me%20a%20coffee&amp;logoColor=white&amp;labelColor=b0c4de" style="max-width:100%;"></a></p>
 
@@ -24,15 +24,17 @@ search for <i>FKF Budapest Garbage</i> in the Integrations.<br />
 Sensors of this platform should be configured as per below information.
 
 #### Configuration:
-Define sensors with the following configuration parameters according to [FKF Hulladéknaptár](https://www.fkf.hu/hulladeknaptar/).<br />
+Define sensors with the following configuration parameters according to [FKF Hulladéknaptár](https://www.fkf.hu/hulladeknaptar/)
+for Budapest or [FKF Hulladéknaptár](https://www.fkf.hu/hulladeknaptar-budaors) for Budaörs.<br />
 
 ---
 | Name | Optional | `Default` | Description |
 | :---- | :---- | :------- | :----------- |
 | name | **Y** | - | sensor of fkf_garbage_collection type |
-| zipcode | **N** | - | ZIP code |
+| city | **Y** | `Budapest` | City to look for. Only Budapest and Budaörs are supported |
+| zipcode | **N** | - | ZIP code (only for Budapest) |
 | publicplace | **N** | - | Name of public place |
-| housenr | **N** | - | House number |
+| housenr | **N** | - | House number (only for Budapest) |
 | offsetdays | **Y** | `0` | Optional offset for the number of days left (usually 1) |
 | calendar | **Y** | `false` | Show FKF schedule in calendar |
 | calendar_lang | **Y** | `en` | Language to display garbage type in calendar |
@@ -46,11 +48,12 @@ Green garbage collection related attribute will not be included when the green g
 
 #### Example
 ```
-platform: fkf_garbage_collection
-name: 'fkf_my_schedule'
-zipcode: '1013'
-publicplace: 'Attila út'
-housenr: '69'
+sensor:
+- platform: fkf_garbage_collection
+  name: 'fkf_my_schedule'
+  zipcode: '1013'
+  publicplace: 'Attila út'
+  housenr: '69'
 ```
 
 #### Lovelace UI

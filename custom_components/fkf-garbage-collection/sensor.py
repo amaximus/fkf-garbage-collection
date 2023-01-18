@@ -37,6 +37,7 @@ CONF_CALENDAR = 'calendar'
 CONF_CALENDAR_LANG = 'calendar_lang'
 CONF_GREEN = 'green'
 CONF_GREENCOLOR = 'greencolor'
+CONF_CITY = 'city'
 
 DEFAULT_NAME = 'FKF Garbage'
 DEFAULT_ICON = 'mdi:trash-can-outline'
@@ -47,6 +48,7 @@ DEFAULT_CONF_CALENDAR = 'false'
 DEFAULT_CONF_CALENDAR_LANG = 'en'
 DEFAULT_CONF_GREEN = 'false'
 DEFAULT_CONF_GREENCOLOR = ''
+DEFAULT_CONF_CITY = 'Budapest'
 
 HTTP_TIMEOUT = 5 # secs
 SCAN_INTERVAL = timedelta(hours=1)
@@ -61,6 +63,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_CALENDAR_LANG, default=DEFAULT_CONF_CALENDAR_LANG): cv.string,
     vol.Optional(CONF_GREEN, default=DEFAULT_CONF_GREEN): cv.boolean,
     vol.Optional(CONF_GREENCOLOR, default=DEFAULT_CONF_GREENCOLOR): cv.string,
+    vol.Optional(CONF_CITY, default=DEFAULT_CONF_CITY): cv.string,
 })
 
 MAR1 = 60
@@ -77,9 +80,10 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     calendar_lang = config.get(CONF_CALENDAR_LANG)
     green = config.get(CONF_GREEN)
     greencolor = config.get(CONF_GREENCOLOR)
+    city = config.get(CONF_CITY)
 
     async_add_devices(
-        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor)],update_before_add=True)
+        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor, city)],update_before_add=True)
 
 def dconverter(argument):
     switcher = {
@@ -130,9 +134,6 @@ def _int_to_Roman(num):
     return roman_num
 
 async def async_get_fkfdata(self):
-    payload_key = ["district","publicPlace","houseNumber"]
-    october_par = ["ajax/publicPlaces","ajax/houseNumbers","ajax/calSearchResults"]
-    october_hnd = ["onSelectDistricts","onSavePublicPlace","onSearch"]
     weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
     green_dayEN = None
     green_not_added = True
@@ -147,14 +148,14 @@ async def async_get_fkfdata(self):
     if int(datetime.today().strftime('%j')) < MAR1 or int(datetime.today().strftime('%j')) > DEC3:
       self._green = False
 
-    if self._green:
+    if self._green and self._city != "Budaörs":
         url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
         try:
             async with self._session.get(url, timeout=HTTP_TIMEOUT) as response:
                 r = await response.text()
                 s = r.replace("\r","").split("\n")
         except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
-           _LOGGER.debug("Connection error to fkf.hu")
+           _LOGGER.debug("Connection error to fkf.hu for fetching green schedule")
            s = ""
            self._green = False
 
@@ -194,9 +195,18 @@ async def async_get_fkfdata(self):
     except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
         _LOGGER.debug("Connection error to fkf.hu")
 
-    url = 'https://www.fkf.hu/hulladeknaptar'
-
-    payload_val = [self._zipcode, self._publicplace, self._housenr]
+    if self._city == 'Budapest':
+      url = 'https://www.fkf.hu/hulladeknaptar'
+      payload_val = [self._zipcode, self._publicplace, self._housenr]
+      payload_key = ["district","publicPlace","houseNumber"]
+      october_par = ["ajax/publicPlaces","ajax/houseNumbers","ajax/calSearchResults"]
+      october_hnd = ["onSelectDistricts","onSavePublicPlace","onSearch"]
+    elif self._city == 'Budaörs':
+      url = 'https://www.fkf.hu/hulladeknaptar-budaors'
+      payload_val = [self._publicplace]
+      payload_key = ["publicPlace"]
+      october_par = ["ajax/budaorsResults"]
+      october_hnd = ["onSearch"]
 
     if len(cookie) != 0:
         for i in range(len(payload_key)):
@@ -213,21 +223,26 @@ async def async_get_fkfdata(self):
                 async with self._session.post(url, data=payload, headers=headers, timeout=HTTP_TIMEOUT) as response:
                     fdata = await response.json()
             except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
-                _LOGGER.debug("Connection error to fkf.hu")
+                _LOGGER.debug("Connection error to fetch data from fkf.hu")
                 break
 
     if 'ajax/calSearchResults' in fdata:
-        s = fdata["ajax/calSearchResults"].replace("\n","").replace("\"","")
-        s1 = re.sub("\s{2,}"," ",s)
-        s = s1.replace("<div class=communal d-inline-block><i class=fas fa-trash fa-lg mr-2><","") \
-              .replace("<div class=selective d-inline-block><i class=fas fa-trash fa-lg><","") \
-              .replace("<i class=fas fa-trash fa-lg mr-2><","") \
-              .replace("</div>","") \
-              .replace("colspan=3><hr class=white m-0","") \
-              .replace("/i>","")
+      s1 = fdata["ajax/calSearchResults"]
+    if 'ajax/budaorsResults' in fdata:
+      s1 = fdata["ajax/budaorsResults"]
 
-        doc = lh.fromstring(s)
-        tr_elements = doc.xpath('//tr')
+    if len(s1) > 0:
+      s = s1.replace("\n","").replace("\"","")
+      s1 = re.sub("\s{2,}"," ",s)
+      s = s1.replace("<div class=communal d-inline-block><i class=fas fa-trash fa-lg mr-2><","") \
+            .replace("<div class=selective d-inline-block><i class=fas fa-trash fa-lg><","") \
+            .replace("<i class=fas fa-trash fa-lg mr-2><","") \
+            .replace("</div>","") \
+            .replace("colspan=3><hr class=white m-0","") \
+            .replace("/i>","")
+
+      doc = lh.fromstring(s)
+      tr_elements = doc.xpath('//tr')
 
     json_data_list = []
     if len(tr_elements) > 0:
@@ -278,12 +293,13 @@ async def async_get_fkfdata(self):
 
 class FKFGarbageCollectionSensor(Entity):
 
-    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor):
+    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor, city):
         """Initialize the sensor."""
         self._hass = hass
         self._name = name
+        self._city = city
         self._zipcode = zipcode
-        self._publicplace = "---".join(publicplace.rsplit(" ", 1))
+        self._publicplace = "---".join(publicplace.rsplit(" ", 1)) if city == 'Budapest' else publicplace
         self._housenr = housenr
         self._state = None
         self._fkfdata = []

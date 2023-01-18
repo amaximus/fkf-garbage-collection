@@ -24,15 +24,17 @@ search for <i>FKF Budapest Garbage</i> in the Integrations.<br />
 Sensors of this platform should be configured as per below information.
 
 #### Configuration:
-Define sensors with the following configuration parameters according to [FKF Hulladéknaptár](https://www.fkf.hu/hulladeknaptar/).<br />
+Define sensors with the following configuration parameters according to [FKF Hulladéknaptár](https://www.fkf.hu/hulladeknaptar/)
+for Budapest or [FKF Hulladéknaptár](https://www.fkf.hu/hulladeknaptar-budaors) for Budaörs.<br />
 
 ---
 | Name | Optional | `Default` | Description |
 | :---- | :---- | :------- | :----------- |
 | name | **Y** | - | sensor of fkf_garbage_collection type |
-| zipcode | **N** | - | ZIP code |
+| city | **Y** | `Budapest` | City to look for. Only Budapest and Budaörs are supported |
+| zipcode | **N** | - | ZIP code (only for Budapest) |
 | publicplace | **N** | - | Name of public place |
-| housenr | **N** | - | House number |
+| housenr | **N** | - | House number (only for Budapest) |
 | offsetdays | **Y** | `0` | Optional offset for the number of days left (usually 1) |
 | calendar | **Y** | `false` | Show FKF schedule in calendar |
 | calendar_lang | **Y** | `en` | Language to display garbage type in calendar |
