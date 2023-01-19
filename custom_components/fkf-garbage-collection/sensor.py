@@ -138,6 +138,7 @@ async def async_get_fkfdata(self):
     green_dayEN = None
     green_not_added = True
     s = ""
+    s1 = ""
     s2 = ""
     fdata = {}
     tr_elements = []
