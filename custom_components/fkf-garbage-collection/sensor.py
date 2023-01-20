@@ -148,6 +148,7 @@ async def async_get_fkfdata(self):
     today = datetime.today().strftime(date_format)
     if int(datetime.today().strftime('%j')) < MAR1 or int(datetime.today().strftime('%j')) > DEC3:
       self._green = False
+      self._green_green_days = None
 
     if self._green and self._city != "Budaörs":
         url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
@@ -159,6 +160,7 @@ async def async_get_fkfdata(self):
            _LOGGER.debug("Connection error to fkf.hu for fetching green schedule")
            s = ""
            self._green = False
+           self._green_green_days = None
 
         CLEANHTML = re.compile('<.*?>')
 
@@ -363,8 +365,7 @@ class FKFGarbageCollectionSensor(Entity):
 
         self._attr["current"] = self._current
         self._attr["next_communal_days"] = self._next_communal_days
-        if self._next_green_days is not None:
-          self._attr["next_green_days"] = self._next_green_days
+        self._attr["next_green_days"] = self._next_green_days
         self._attr["next_selective_days"] = self._next_selective_days
         self._attr["calendar_lang"] = self._calendar_lang
 
