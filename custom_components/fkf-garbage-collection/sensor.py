@@ -43,20 +43,22 @@ DEFAULT_NAME = 'FKF Garbage'
 DEFAULT_ICON = 'mdi:trash-can-outline'
 DEFAULT_ICON_GREEN = 'mdi:leaf'
 DEFAULT_ICON_SELECTIVE = 'mdi:recycle'
-DEFAULT_CONF_OFFSETDAYS = 0
 DEFAULT_CONF_CALENDAR = 'false'
 DEFAULT_CONF_CALENDAR_LANG = 'en'
+DEFAULT_CONF_CITY = 'Budapest'
 DEFAULT_CONF_GREEN = 'false'
 DEFAULT_CONF_GREENCOLOR = ''
-DEFAULT_CONF_CITY = 'Budapest'
+DEFAULT_CONF_HOUSENR = '1'
+DEFAULT_CONF_OFFSETDAYS = 0
 
 HTTP_TIMEOUT = 5 # secs
 SCAN_INTERVAL = timedelta(hours=1)
+ZIPCODE_BUDAORS = '2040'
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_ZIPCODE): cv.string,
     vol.Required(CONF_PUBLICPLACE): cv.string,
-    vol.Required(CONF_HOUSENR): cv.string,
+    vol.Optional(CONF_HOUSENR, default=DEFAULT_CONF_HOUSENR) : cv.string,
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
     vol.Optional(CONF_OFFSETDAYS, default=DEFAULT_CONF_OFFSETDAYS): cv.positive_int,
     vol.Optional(CONF_CALENDAR, default=DEFAULT_CONF_CALENDAR): cv.boolean,
@@ -83,7 +85,7 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     city = config.get(CONF_CITY)
 
     async_add_devices(
-        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor, city)],update_before_add=True)
+        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor)],update_before_add=True)
 
 def dconverter(argument):
     switcher = {
@@ -150,7 +152,7 @@ async def async_get_fkfdata(self):
       self._green = False
       self._green_green_days = None
 
-    if self._green and self._city != "Budaörs":
+    if self._green and self._zipcode != ZIPCODE_BUDAORS:
         url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
         try:
             async with self._session.get(url, timeout=HTTP_TIMEOUT) as response:
@@ -198,18 +200,18 @@ async def async_get_fkfdata(self):
     except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
         _LOGGER.debug("Connection error to fkf.hu")
 
-    if self._city == 'Budapest':
-      url = 'https://www.fkf.hu/hulladeknaptar'
-      payload_val = [self._zipcode, self._publicplace, self._housenr]
-      payload_key = ["district","publicPlace","houseNumber"]
-      october_par = ["ajax/publicPlaces","ajax/houseNumbers","ajax/calSearchResults"]
-      october_hnd = ["onSelectDistricts","onSavePublicPlace","onSearch"]
-    elif self._city == 'Budaörs':
+    if self._zipcode == ZIPCODE_BUDAORS:
       url = 'https://www.fkf.hu/hulladeknaptar-budaors'
       payload_val = [self._publicplace]
       payload_key = ["publicPlace"]
       october_par = ["ajax/budaorsResults"]
       october_hnd = ["onSearch"]
+    else:
+      url = 'https://www.fkf.hu/hulladeknaptar'
+      payload_val = [self._zipcode, self._publicplace, self._housenr]
+      payload_key = ["district","publicPlace","houseNumber"]
+      october_par = ["ajax/publicPlaces","ajax/houseNumbers","ajax/calSearchResults"]
+      october_hnd = ["onSelectDistricts","onSavePublicPlace","onSearch"]
 
     if len(cookie) != 0:
         for i in range(len(payload_key)):
@@ -296,13 +298,12 @@ async def async_get_fkfdata(self):
 
 class FKFGarbageCollectionSensor(Entity):
 
-    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor, city):
+    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor):
         """Initialize the sensor."""
         self._hass = hass
         self._name = name
-        self._city = city
         self._zipcode = zipcode
-        self._publicplace = "---".join(publicplace.rsplit(" ", 1)) if city == 'Budapest' else publicplace
+        self._publicplace = "---".join(publicplace.rsplit(" ", 1)) if zipcode != ZIPCODE_BUDAORS else publicplace
         self._housenr = housenr
         self._state = None
         self._fkfdata = []

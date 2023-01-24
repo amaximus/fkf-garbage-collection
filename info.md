@@ -31,10 +31,10 @@ for Budapest or [FKF Hulladéknaptár](https://www.fkf.hu/hulladeknaptar-budaors
 | Name | Optional | `Default` | Description |
 | :---- | :---- | :------- | :----------- |
 | name | **Y** | - | sensor of fkf_garbage_collection type |
-| city | **Y** | `Budapest` | City to look for. Only Budapest and Budaörs are supported |
-| zipcode | **N** | - | ZIP code (only for Budapest) |
+| city | **Y** | `Budapest` | City to look for. Only Budapest and Budaörs are supported. Deprecated by zipcode. It will be removed in the next version. |
+| zipcode | **N** | - | ZIP code |
 | publicplace | **N** | - | Name of public place |
-| housenr | **N** | - | House number (only for Budapest) |
+| housenr | **Y** | `1` | House number (only for Budapest) |
 | offsetdays | **Y** | `0` | Optional offset for the number of days left (usually 1) |
 | calendar | **Y** | `false` | Show FKF schedule in calendar |
 | calendar_lang | **Y** | `en` | Language to display garbage type in calendar |
