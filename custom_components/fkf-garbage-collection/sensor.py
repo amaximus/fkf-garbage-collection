@@ -104,7 +104,9 @@ def gconverter(argument):
       "Szelektív": "selective",
       "Kommunális": "communal",
       'Szelektív Kommunális': "communal_selective",
-      'Kommunális Szelektív': "communal_selective"
+      'Kommunális Szelektív': "communal_selective",
+      'Kommunális Szelektív Zöld': "communal_selective_green",
+      'Kommunális Zöld': "communal_green"
     }
     return switcher.get(argument)
 
@@ -151,6 +153,10 @@ async def async_get_fkfdata(self):
     if int(datetime.today().strftime('%j')) < MAR1 or int(datetime.today().strftime('%j')) > DEC3:
       self._green = False
       self._green_green_days = None
+    if len(self._greencolor) == 0 and self._zipcode != ZIPCODE_BUDAORS:
+      self._green = False
+      self._green_green_days = None
+      _LOGGER.debug("greencolor parameter not set for " + self._publicplace)
 
     if self._green and self._zipcode != ZIPCODE_BUDAORS:
         url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
@@ -159,7 +165,7 @@ async def async_get_fkfdata(self):
                 r = await response.text()
                 s = r.replace("\r","").split("\n")
         except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
-           _LOGGER.debug("Connection error to fkf.hu for fetching green schedule")
+           _LOGGER.debug("Connection error for fetching green schedule from" + url)
            s = ""
            self._green = False
            self._green_green_days = None
@@ -168,7 +174,7 @@ async def async_get_fkfdata(self):
 
         for ind,line in enumerate(s):
           if not self._greencolor:
-            matchre = re.compile('<strong>[A-ZÁÉÖŐÖÜ]*\ *</strong>')
+            matchre = re.compile('<strong>[A-ZÁÉÖŐÜÚŰ]*\ *</strong>')
             m = re.search(matchre,line)
             if m != None:
               s2 = re.sub(CLEANHTML,'',line.replace("&nbsp;","").replace("\t","")) \
@@ -228,7 +234,7 @@ async def async_get_fkfdata(self):
                 async with self._session.post(url, data=payload, headers=headers, timeout=HTTP_TIMEOUT) as response:
                     fdata = await response.json()
             except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
-                _LOGGER.debug("Connection error to fetch data from fkf.hu")
+                _LOGGER.debug("Connection error to fetch data from " + url)
                 break
 
     if 'ajax/calSearchResults' in fdata:
@@ -242,6 +248,8 @@ async def async_get_fkfdata(self):
       s = s1.replace("<div class=communal d-inline-block><i class=fas fa-trash fa-lg mr-2><","") \
             .replace("<div class=selective d-inline-block><i class=fas fa-trash fa-lg><","") \
             .replace("<i class=fas fa-trash fa-lg mr-2><","") \
+            .replace("<i class=fab fa-pagelines fa-lg mr-2 style=color:green;><","") \
+            .replace("<div class=communal d-inline-block>","") \
             .replace("</div>","") \
             .replace("colspan=3><hr class=white m-0","") \
             .replace("/i>","")
@@ -263,6 +271,7 @@ async def async_get_fkfdata(self):
           if (b - a).days - self._offsetdays >= 0:
             gtype = gconverter(garbage[i].strip())
             gdays = (b - a).days - self._offsetdays
+            _LOGGER.debug(self._publicplace + ": " + str(gdays) + ": " + gtype)
 
             if gtype == "selective" and self._next_selective_days == None:
               self._next_selective_days = gdays
@@ -272,8 +281,19 @@ async def async_get_fkfdata(self):
               self._next_selective_days = gdays
               if self._next_communal_days == None:
                 self._next_communal_days = gdays
+            if gtype == "communal_selective_green" and self._next_selective_days == None and self._zipcode == ZIPCODE_BUDAORS:
+              self._next_selective_days = gdays
+              if self._next_communal_days == None:
+                self._next_communal_days = gdays
+              if self._green and self._next_green_days == None:
+                self._next_green_days = gdays
+            if gtype == "communal_green" and self._zipcode == ZIPCODE_BUDAORS:
+              if self._next_communal_days == None:
+                self._next_communal_days = gdays
+              if self._green and self._next_green_days == None:
+                self._next_green_days = gdays
 
-            if self._green and self._next_green_days != None:
+            if self._green and self._next_green_days != None and self._zipcode != ZIPCODE_BUDAORS:
                 if gdays == green_day_diff:
                     gtype += "_green"
                 elif green_day_diff < gdays and green_not_added:
