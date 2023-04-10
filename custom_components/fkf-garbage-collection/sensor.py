@@ -183,8 +183,11 @@ async def async_get_fkfdata(self):
           else:
             matchstr = "storage/app/media/uploaded-files/" + self._greencolor
             if matchstr in line:
-              s2 = re.sub(CLEANHTML,'',s[ind+1]).replace("&nbsp;","").replace("\t","") \
-                   .lower().capitalize()
+              i = 1
+              while len(s2) == 0 and i < 4:
+                s2 = re.sub(CLEANHTML,'',s[ind+i]).replace("&nbsp;","").replace("\t","") \
+                     .lower().capitalize()
+                i += 1
               break
 
         if self._green:
@@ -194,7 +197,7 @@ async def async_get_fkfdata(self):
             green_day_diff = (weekdays.index(green_dayEN) + 7 - today_wday) % 7 - self._offsetdays
             if green_day_diff < 0:
               green_day_diff = 0
-            green_date = datetime.strptime(today, date_format) + timedelta(days=green_day_diff)
+            green_date = datetime.strptime(today, date_format) + timedelta(days=green_day_diff + self._offsetdays)
             if self._next_green_days == None:
               self._next_green_days = green_day_diff
 
