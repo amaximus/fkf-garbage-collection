@@ -196,7 +196,7 @@ async def async_get_fkfdata(self):
           if green_dayEN != None:
             green_day_diff = (weekdays.index(green_dayEN) + 7 - today_wday) % 7 - self._offsetdays
             if green_day_diff < 0:
-              green_day_diff = 0
+              green_day_diff += 7
             green_date = datetime.strptime(today, date_format) + timedelta(days=green_day_diff + self._offsetdays)
             if self._next_green_days == None:
               self._next_green_days = green_day_diff
