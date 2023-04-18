@@ -136,13 +136,11 @@ class EntitiesCalendarData:
                       gtype = self._split_and_translate("en", garbages[str(i)])
                     _LOGGER.debug("async_get_events: %s s: %s, e: %s, type: %s", friendly_name, startdates[str(i)].strftime("%Y.%m.%d"), end.strftime("%Y.%m.%d"),gtype)
 
-                    event = {
-                        "uid": entity,
-                        "summary": friendly_name + ": " + gtype,
-                        "start": {"date": startdates[str(i)].strftime("%Y-%m-%d")},
-                        "end": {"date": end.strftime("%Y-%m-%d")},
-                        "allDay": True,
-                    }
+                    event = CalendarEvent(
+                        summary=friendly_name + ": " + gtype,
+                        start= startdates[str(i)],
+                        end= end,                
+                    )
                     events.append(event)
                 i += 1
         return events
