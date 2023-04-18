@@ -355,7 +355,7 @@ class FKFGarbageCollectionSensor(Entity):
         if self._calendar:
             if CALENDAR_PLATFORM not in self.hass.data[DOMAIN]:
                  self.hass.data[DOMAIN][CALENDAR_PLATFORM] = EntitiesCalendarData(self.hass)
-                 _LOGGER.debug("Creating fkfgarbage_collection calendar " + self._name)
+                 _LOGGER.debug("Creating fkfgarbage_collection calendar ")
                  self.hass.async_create_task(
                       async_load_platform(
                           self.hass,
