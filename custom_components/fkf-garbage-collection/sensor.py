@@ -71,8 +71,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 MAR1 = 60
 DEC3 = 337
 
-@asyncio.coroutine
-def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     name = config.get(CONF_NAME)
     zipcode = config.get(CONF_ZIPCODE)
     publicplace = config.get(CONF_PUBLICPLACE)
@@ -405,7 +404,6 @@ class FKFGarbageCollectionSensor(Entity):
             f"config: {self.config}]"
         )
 
-    @asyncio.coroutine
     async def async_update(self):
         self._next_communal_days = None
         self._next_green_days = None
