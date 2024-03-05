@@ -5,7 +5,7 @@
   "dependencies": [],
   "config_flow": false,
   "codeowners": ["@amaximus"],
-  "version": "0.8.1",
+  "version": "0.8.2",
   "iot_class": "cloud_polling",
   "requirements": ["lxml", "voluptuous"]
 }
