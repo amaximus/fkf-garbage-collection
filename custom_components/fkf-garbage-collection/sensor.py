@@ -1,12 +1,13 @@
 from datetime import timedelta
 from datetime import datetime
+import aiohttp
 import asyncio
 import json
 import logging
 import lxml.html as lh
 import re
+import time
 import voluptuous as vol
-import aiohttp
 
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import ATTR_ATTRIBUTION, CONF_NAME
@@ -52,6 +53,7 @@ DEFAULT_CONF_HOUSENR = '1'
 DEFAULT_CONF_OFFSETDAYS = 0
 
 HTTP_TIMEOUT = 5 # secs
+MAX_RETRIES = 3
 SCAN_INTERVAL = timedelta(hours=1)
 ZIPCODE_BUDAORS = '2040'
 
@@ -160,15 +162,20 @@ async def async_get_fkfdata(self):
 
     if self._green and self._zipcode != ZIPCODE_BUDAORS:
         url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
-        try:
-            async with _session.get(url, timeout=HTTP_TIMEOUT) as response:
-                r = await response.text()
-                s = r.replace("\r","").split("\n")
-        except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
-           _LOGGER.debug("Connection error for fetching green schedule from" + url)
-           s = ""
-           self._green = False
-           self._green_green_days = None
+        for i in range(MAX_RETRIES):
+          try:
+              async with _session.get(url, timeout=HTTP_TIMEOUT) as response:
+                  r = await response.text()
+                  s = r.replace("\r","").split("\n")
+              if response.status == 200:
+                  _LOGGER.debug("Fetch attempt " + str(i+1) + " successful for green schedule from " + url)
+                  break
+          except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
+              _LOGGER.debug("Connection error on fetch attempt " + str(i+1) + " for green schedule from " + url)
+              s = ""
+              self._green = False
+              self._green_green_days = None
+              time.sleep(10)
 
         CLEANHTML = re.compile('<.*?>')
 
