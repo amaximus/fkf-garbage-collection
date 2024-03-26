@@ -138,6 +138,9 @@ def _int_to_Roman(num):
         i += 1
     return roman_num
 
+def _sleep(secs):
+    time.sleep(secs)
+
 async def async_get_fkfdata(self):
     weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
     green_dayEN = None
@@ -175,7 +178,7 @@ async def async_get_fkfdata(self):
               s = ""
               self._green = False
               self._green_green_days = None
-              time.sleep(10)
+              await hass.async_add_executor_job(_sleep, 10)
 
         CLEANHTML = re.compile('<.*?>')
 
