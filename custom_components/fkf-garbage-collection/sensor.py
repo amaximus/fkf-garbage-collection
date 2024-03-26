@@ -178,7 +178,7 @@ async def async_get_fkfdata(self):
               s = ""
               self._green = False
               self._green_green_days = None
-              await hass.async_add_executor_job(_sleep, 10)
+              await self._hass.async_add_executor_job(_sleep, 10)
 
         CLEANHTML = re.compile('<.*?>')
 
