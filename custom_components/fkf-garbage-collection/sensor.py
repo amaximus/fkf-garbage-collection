@@ -170,11 +170,14 @@ async def async_get_fkfdata(self):
               async with _session.get(url, timeout=HTTP_TIMEOUT) as response:
                   r = await response.text()
                   s = r.replace("\r","").split("\n")
-              if response.status == 200:
-                  _LOGGER.debug("Fetch attempt " + str(i+1) + " successful for green schedule from " + url)
+              if not response.status // 100 == 2:
+                  _LOGGER.debug("Fetch attempt " + str(i+1) + ": unexpected response " + str(response.status))
+                  await self._hass.async_add_executor_job(_sleep, 10)
+              else:
                   break
+
           except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError) as err:
-              _LOGGER.debug(str(err) + " on fetch attempt " + str(i+1) + " for green schedule from " + url)
+              _LOGGER.debug("Fetch attempt " + str(i+1) + ": " + str(err) + " for green schedule " + url)
               s = ""
               self._green = False
               self._green_green_days = None
