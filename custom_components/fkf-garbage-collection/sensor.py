@@ -177,7 +177,8 @@ async def async_get_fkfdata(self):
                   break
 
           except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError) as err:
-              _LOGGER.debug("Fetch attempt " + str(i+1) + ": " + str(err) + " for green schedule " + url)
+              _LOGGER.debug("Fetch attempt " + str(i+1) + " failed for green schedule " + url)
+              _LOGGER.error(err)
               s = ""
               self._green = False
               self._green_green_days = None
