@@ -188,7 +188,7 @@ async def async_get_fkfdata(self):
 
         for ind,line in enumerate(s):
           if not self._greencolor:
-            matchre = re.compile('<strong>[A-ZÁÉÖŐÜÚŰ]*\ *</strong>')
+            matchre = re.compile(r'<strong>[A-ZÁÉÖŐÜÚŰ]*\ *</strong>')
             m = re.search(matchre,line)
             if m != None:
               s2 = re.sub(CLEANHTML,'',line.replace("&nbsp;","").replace("\t","")) \
@@ -261,7 +261,7 @@ async def async_get_fkfdata(self):
 
     if len(s1) > 0:
       s = s1.replace("\n","").replace("\"","")
-      s1 = re.sub("\s{2,}"," ",s)
+      s1 = re.sub(r'\s{2,}',' ',s)
       s = s1.replace("<div class=communal d-inline-block><i class=fas fa-trash fa-lg mr-2><","") \
             .replace("<div class=selective d-inline-block><i class=fas fa-trash fa-lg><","") \
             .replace("<i class=fas fa-trash fa-lg mr-2><","") \
