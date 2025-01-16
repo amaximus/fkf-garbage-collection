@@ -22,13 +22,14 @@ from .const import (
     CALENDAR_NAME,
     CALENDAR_PLATFORM,
     SENSOR_PLATFORM,
+    URL,
 )
 
 REQUIREMENTS = [ ]
 
 _LOGGER = logging.getLogger(__name__)
 
-CONF_ATTRIBUTION = "Data provided by fkf.hu"
+CONF_ATTRIBUTION = "Data provided by " + URL
 CONF_ZIPCODE = 'zipcode'
 CONF_PUBLICPLACE = 'publicplace'
 CONF_HOUSENR = 'housenr'
@@ -164,7 +165,7 @@ async def async_get_fkfdata(self):
       _LOGGER.debug("greencolor parameter not set for " + self._publicplace)
 
     if self._green and self._zipcode != ZIPCODE_BUDAORS:
-        url = 'https://www.fkf.hu/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
+        url = 'https://' + URL + '/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
         for i in range(MAX_RETRIES):
           try:
               async with _session.get(url, timeout=HTTP_TIMEOUT) as response:
@@ -215,22 +216,22 @@ async def async_get_fkfdata(self):
             if self._next_green_days == None:
               self._next_green_days = green_day_diff
 
-    url = 'https://www.fkf.hu/'
+    url = 'https://' + URL + '/'
     try:
         async with _session.get(url, timeout=HTTP_TIMEOUT) as response:
             r = await response.text()
             cookie = response.headers['Set-Cookie']
     except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
-        _LOGGER.debug("Connection error to fkf.hu")
+        _LOGGER.debug("Connection error to " + URL)
 
     if self._zipcode == ZIPCODE_BUDAORS:
-      url = 'https://www.fkf.hu/hulladeknaptar-budaors'
+      url = 'https://' + URL + '/hulladeknaptar-budaors'
       payload_val = [self._publicplace]
       payload_key = ["publicPlace"]
       october_par = ["ajax/budaorsResults"]
       october_hnd = ["onSearch"]
     else:
-      url = 'https://www.fkf.hu/hulladeknaptar'
+      url = 'https://' + URL + '/hulladeknaptar'
       payload_val = [self._zipcode, self._publicplace, self._housenr]
       payload_key = ["district","publicPlace","houseNumber"]
       october_par = ["ajax/publicPlaces","ajax/houseNumbers","ajax/calSearchResults"]

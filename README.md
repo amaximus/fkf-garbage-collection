@@ -4,15 +4,15 @@
 
 # FKF Budapest Garbage Collection custom component for Home Assistant
 
-This custom component provides garbage collection schedule from FKF Budapest Department of Public
-for a configurable address. It also supports green garbage collection schedule (FKF Budapest treats
+This custom component provides garbage collection schedule from MOHU Budapest Department of Public
+for a configurable address. It also supports green garbage collection schedule (MOHU Budapest treats
 it differently)
 
 The state of the sensor will be the number of days to the first upcoming garbage collection date.
 
 The sensor will also report in an attribute the status of the latest data fetch.
 
-The FKF Garbage Collection sensors can also be added to appear in HASS calendar. Calendar entries will be prefixed
+The MOHU Budapest Garbage Collection sensors can also be added to appear in HASS calendar. Calendar entries will be prefixed
 with the friendly name of the sensor to support and distinguish schedule for multiple such sensors/addresses. Translation of
 the calendar entries is also available through the calendar_lang option; so far only Hungarian and English are supported.
 Language tags should follow [IANA subtag registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry).
@@ -24,8 +24,8 @@ search for <i>FKF Budapest Garbage</i> in the Integrations.<br />
 Sensors of this platform should be configured as per below information.
 
 #### Configuration:
-Define sensors with the following configuration parameters according to [FKF Hulladéknaptár](https://www.fkf.hu/hulladeknaptar/)
-for Budapest or [FKF Hulladéknaptár](https://www.fkf.hu/hulladeknaptar-budaors) for Budaörs.<br />
+Define sensors with the following configuration parameters according to [MOHU Budapest Hulladéknaptár](https://mohubudapest.hu/hulladeknaptar/)
+for Budapest or [MOHU Budapest Hulladéknaptár](https://mohubudapest.hu/hulladeknaptar-budaors) for Budaörs.<br />
 
 ---
 | Name | Optional | `Default` | Description |
@@ -36,15 +36,15 @@ for Budapest or [FKF Hulladéknaptár](https://www.fkf.hu/hulladeknaptar-budaors
 | publicplace | **N** | - | Name of public place |
 | housenr | **Y** | `1` | House number (only for Budapest) |
 | offsetdays | **Y** | `0` | Optional offset for the number of days left (usually 1) |
-| calendar | **Y** | `false` | Show FKF schedule in calendar |
+| calendar | **Y** | `false` | Show MOHU Budapest schedule in calendar |
 | calendar_lang | **Y** | `en` | Language to display garbage type in calendar |
 | green | **Y** | `false` | Include green garbage schedule as well |
 | greencolor | **Y** | `` | Use map color for districts that have different green garbage collecting days per region (see below) |
 ---
 
-For green garbage collection, `greencolor`, if defined, takes precedence over `publicplace`-`housenr`. Color name can be fetched from the source of the webpage `www.fkf.hu/kerti-zoldhulladek-korzetek-<districts_roman_number>-kerulet` and is one of these: `kek`, `lila`, `narancs`, `rozsaszin`, `sarga`. `greencolor` is not necessary if the whole district has green garbage collection on one specific day. `greencolor` has to be defined for Budapest districts.
+For green garbage collection, `greencolor`, if defined, takes precedence over `publicplace`-`housenr`. Color name can be fetched from the source of the webpage `mohubudapest.hu/kerti-zoldhulladek-korzetek-<districts_roman_number>-kerulet` and is one of these: `kek`, `lila`, `narancs`, `rozsaszin`, `sarga`. `greencolor` is not necessary if the whole district has green garbage collection on one specific day. `greencolor` has to be defined for Budapest districts.
 
-Green garbage collection related attribute will not be included when the green garbage collection service is suspended during winter time ([FKF Zöldhulladék](https://www.fkf.hu/kerti-zoldhulladek-gyujtes)).
+Green garbage collection related attribute will not be included when the green garbage collection service is suspended during winter time ([MOHU Budapest Zöldhulladék](https://mohubudapest.hu/kerti-zoldhulladek-gyujtes)).
 
 #### Example
 ```
