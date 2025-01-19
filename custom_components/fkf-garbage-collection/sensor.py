@@ -40,6 +40,7 @@ CONF_CALENDAR_LANG = 'calendar_lang'
 CONF_GREEN = 'green'
 CONF_GREENCOLOR = 'greencolor'
 CONF_CITY = 'city'
+CONF_SSL = "ssl"
 
 DEFAULT_NAME = 'FKF Garbage'
 DEFAULT_ICON = 'mdi:trash-can-outline'
@@ -52,6 +53,7 @@ DEFAULT_CONF_GREEN = 'false'
 DEFAULT_CONF_GREENCOLOR = ''
 DEFAULT_CONF_HOUSENR = '1'
 DEFAULT_CONF_OFFSETDAYS = 0
+DEFAULT_CONF_SSL = False
 
 HTTP_TIMEOUT = 60 # secs
 MAX_RETRIES = 3
@@ -69,6 +71,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_GREEN, default=DEFAULT_CONF_GREEN): cv.boolean,
     vol.Optional(CONF_GREENCOLOR, default=DEFAULT_CONF_GREENCOLOR): cv.string,
     vol.Optional(CONF_CITY, default=DEFAULT_CONF_CITY): cv.string,
+    vol.Optional(CONF_SSL, default=DEFAULT_CONF_SSL): cv.boolean,
 })
 
 MAR1 = 60
@@ -85,9 +88,10 @@ async def async_setup_platform(hass, config, async_add_devices, discovery_info=N
     green = config.get(CONF_GREEN)
     greencolor = config.get(CONF_GREENCOLOR)
     city = config.get(CONF_CITY)
+    ssl = config.get(CONF_SSL)
 
     async_add_devices(
-        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor)],update_before_add=True)
+        [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor, ssl)],update_before_add=True)
 
 def dconverter(argument):
     switcher = {
@@ -152,7 +156,7 @@ async def async_get_fkfdata(self):
     fdata = {}
     tr_elements = []
     cookie = ""
-    _session = async_get_clientsession(self._hass)
+    _session = async_get_clientsession(self._hass, self._ssl)
 
     date_format = "%Y.%m.%d"
     today = datetime.today().strftime(date_format)
@@ -336,7 +340,7 @@ async def async_get_fkfdata(self):
 
 class FKFGarbageCollectionSensor(Entity):
 
-    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor):
+    def __init__(self, hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor, ssl):
         """Initialize the sensor."""
         self._hass = hass
         self._name = name
@@ -355,6 +359,7 @@ class FKFGarbageCollectionSensor(Entity):
         self._calendar_lang = calendar_lang
         self._green = green
         self._greencolor = greencolor
+        self._ssl = ssl
         self._attr = {}
 
     async def async_added_to_hass(self):
