@@ -1,6 +1,7 @@
 {
   "domain": "fkf_garbage_collection",
   "name": "FKF Budapest Garbage Collection",
+  "version": "0.0.0",
   "documentation": "https://github.com/amaximus/fkf_garbage_collection",
   "dependencies": [],
   "config_flow": false,
