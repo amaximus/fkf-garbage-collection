@@ -48,7 +48,7 @@ For green garbage collection, `greencolor`, if defined, takes precedence over `p
 ---
 | `greencolor` | color |
 | :---- | :----------- |
-| `narancs` | ![](https://mohubudapest.hu/storage/app/media/uploaded-files/1730370882590.jpeg) |
+| `narancs` | [](https://mohubudapest.hu/storage/app/media/uploaded-files/1730370882590.jpeg) |
 ----
  `kek`, `lila`, `narancs`, `rozsaszin`, `sarga`. `greencolor` is not necessary if the whole district has green garbage collection on one specific day. `greencolor` has to be defined for Budapest districts.
 
