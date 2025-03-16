@@ -46,7 +46,7 @@ for Budapest or [MOHU Budapest Hulladéknaptár](https://mohubudapest.hu/hullade
 For green garbage collection, `greencolor`, if defined, takes precedence over `publicplace`-`housenr`. Color name can be fetched from the source of the webpage `mohubudapest.hu/kerti-zoldhulladek-korzetek-<districts_roman_number>-kerulet` and is one of these:
 
 <div align="center">
-<img src="https://mohubudapest.hu/storage/app/media/uploaded-files/1730370882590.jpeg width="40px"></img>
+<img src="https://mohubudapest.hu/storage/app/media/uploaded-files/1730370882590.jpeg" width="40px"></img>
 </div>
 
 
