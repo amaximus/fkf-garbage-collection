@@ -45,11 +45,8 @@ for Budapest or [MOHU Budapest Hulladéknaptár](https://mohubudapest.hu/hullade
 
 For green garbage collection, `greencolor`, if defined, takes precedence over `publicplace`-`housenr`. Color name can be fetched from the source of the webpage `mohubudapest.hu/kerti-zoldhulladek-korzetek-<districts_roman_number>-kerulet` and is one of these:
 
----
-| `greencolor` | color |
-| :---- | :----------- |
-| `narancs` | ![](https://mohubudapest.hu/storage/app/media/uploaded-files/1730370882590.jpeg) |
-----
+`narancs` ![](https://mohubudapest.hu/storage/app/media/uploaded-files/1730370882590.jpeg) 
+
  `kek`, `lila`, `narancs`, `rozsaszin`, `sarga`. `greencolor` is not necessary if the whole district has green garbage collection on one specific day. `greencolor` has to be defined for Budapest districts.
 
 Green garbage collection related attribute will not be included when the green garbage collection service is suspended during winter time ([MOHU Budapest Zöldhulladék](https://mohubudapest.hu/kerti-zoldhulladek-gyujtes)).
