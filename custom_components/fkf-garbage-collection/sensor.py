@@ -93,6 +93,61 @@ async def async_setup_platform(hass, config, async_add_devices, discovery_info=N
     async_add_devices(
         [FKFGarbageCollectionSensor(hass, name, zipcode, publicplace, housenr, offsetdays, calendar, calendar_lang, green, greencolor, ssl)],update_before_add=True)
 
+def cconverter(argument):
+    switcher = {
+     '1730799272633': 'lila',
+     '1730799060208': 'lila',
+     '1730798058029': 'lila',
+     '1730798863644': 'lila',
+     '1730798333275': 'lila',
+     '1730797853938': 'lila',
+     '1730725941615': 'lila',
+     '1730798057927': 'sarga',
+     '1730799060147': 'sarga',
+     '1730798863545': 'sarga',
+     '1730798700732': 'sarga',
+     '1730798333170': 'sarga',
+     '1730797852879': 'sarga',
+     '1730797561410': 'sarga',
+     '1730727535462': 'sarga',
+     '1730726485559': 'sarga',
+     '1730726265826': 'sarga',
+     '1730725940106': 'sarga',
+     '1730725715050': 'sarga',
+     '1730798058079': 'narancs',
+     '1730799060260': 'narancs',
+     '1730799406551': 'narancs',
+     '1730798863693': 'narancs',
+     '1730798333341': 'narancs',
+     '1730797852923': 'narancs',
+     '1730797561506': 'narancs',
+     '1730727534434': 'narancs',
+     '1730726824494': 'narancs',
+     '1730726485505': 'narancs',
+     '1730725941738': 'narancs',
+     '1730370882590': 'narancs',
+     '1730798058121': 'kek',
+     '1730799406551': 'kek',
+     '1730799060306': 'kek',
+     '1730798863593': 'kek',
+     '1730798700841': 'kek',
+     '1730798333398': 'kek',
+     '1730797561464': 'kek',
+     '1730727534484': 'kek',
+     '1730727235202': 'kek',
+     '1730727043249': 'kek',
+     '1730726486784': 'kek',
+     '1730799406597': 'rozsaszin',
+     '1730798057986': 'rozsaszin',
+     '1730798700784': 'rozsaszin',
+     '1730798333227': 'rozsaszin',
+     '1730797853826': 'rozsaszin',
+     '1730727534385': 'rozsaszin',
+     '1730725940148': 'rozsaszin',
+     '1730725197235': 'rozsaszin'
+    }
+    return switcher.get(argument)
+
 def dconverter(argument):
     switcher = {
       'Csütörtök': 'Thursday',
@@ -200,14 +255,21 @@ async def async_get_fkfdata(self):
                    .lower().capitalize()
               break
           else:
-            matchstr = "storage/app/media/uploaded-files/" + self._greencolor
+            matchstr = "storage/app/media/uploaded-files/"
             if matchstr in line:
-              i = 1
-              while len(s2) == 0 and i < 4:
-                s2 = re.sub(CLEANHTML,'',s[ind+i]).replace("&nbsp;","").replace("\t","") \
-                     .lower().capitalize()
-                i += 1
-              break
+              matchre = re.compile(r'/storage/app/media/uploaded-files/[0-9]+\.jpeg')
+              m = re.search(matchre,line)
+              if m != None:
+                color_code = m.group().replace("/storage/app/media/uploaded-files/","").replace(".jpeg","")
+                _LOGGER.debug(self._name + ": " + color_code)
+                if cconverter(color_code) == self._greencolor:
+                  i = 1
+                  while len(s2) == 0 and i < 4:
+                    s2 = re.sub(CLEANHTML,'',s[ind+i]).replace("&nbsp;","").replace("\t","") \
+                         .lower().capitalize()
+                    i += 1
+                    _LOGGER.debug(self._name + " match: " + s2)
+                  break
 
         if self._green:
           today_wday = datetime.today().weekday()
