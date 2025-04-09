@@ -355,6 +355,8 @@ async def async_get_fkfdata(self):
           if (b - a).days - self._offsetdays >= 0:
             gtype = gconverter(garbage[i].strip())
             gdays = (b - a).days - self._offsetdays
+            if gdays is None:
+              gdays = -1
             _LOGGER.debug(self._publicplace + ": " + str(gdays) + ": " + gtype)
 
             if gtype == "selective" and self._next_selective_days == None:
