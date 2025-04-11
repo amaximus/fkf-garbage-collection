@@ -218,10 +218,6 @@ async def async_get_fkfdata(self):
     if int(datetime.today().strftime('%j')) < MAR1 or int(datetime.today().strftime('%j')) > DEC3:
       self._green = False
       self._green_green_days = None
-    if len(self._greencolor) == 0 and self._zipcode != ZIPCODE_BUDAORS:
-      self._green = False
-      self._green_green_days = None
-      _LOGGER.debug("greencolor parameter not set for " + self._publicplace)
 
     if self._green and self._zipcode != ZIPCODE_BUDAORS:
         url = 'https://' + URL + '/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
@@ -247,29 +243,13 @@ async def async_get_fkfdata(self):
         CLEANHTML = re.compile('<.*?>')
 
         for ind,line in enumerate(s):
-          if not self._greencolor:
-            matchre = re.compile(r'<strong>[A-ZÁÉÖŐÜÚŰ]*\ *</strong>')
-            m = re.search(matchre,line)
-            if m != None:
-              s2 = re.sub(CLEANHTML,'',line.replace("&nbsp;","").replace("\t","")) \
-                   .lower().capitalize()
-              break
-          else:
-            matchstr = "storage/app/media/uploaded-files/"
-            if matchstr in line:
-              matchre = re.compile(r'/storage/app/media/uploaded-files/[0-9]+\.jpeg')
-              m = re.search(matchre,line)
-              if m != None:
-                color_code = m.group().replace("/storage/app/media/uploaded-files/","").replace(".jpeg","")
-                _LOGGER.debug(self._name + ": " + color_code)
-                if cconverter(color_code) == self._greencolor:
-                  i = 1
-                  while len(s2) == 0 and i < 4:
-                    s2 = re.sub(CLEANHTML,'',s[ind+i]).replace("&nbsp;","").replace("\t","") \
-                         .lower().capitalize()
-                    i += 1
-                    _LOGGER.debug(self._name + " match: " + s2)
-                  break
+          matchre = re.compile(r'<strong>[A-ZÁÉÖŐÜ]+\&nbsp\;</strong>')
+          m = re.search(matchre,line)
+          if m != None:
+            s2 = re.sub(CLEANHTML,'',line.replace("&nbsp;","").replace("\t","")) \
+                 .lower().capitalize()
+            _LOGGER.debug("Green: " + s2)
+            break
 
         if self._green:
           today_wday = datetime.today().weekday()
