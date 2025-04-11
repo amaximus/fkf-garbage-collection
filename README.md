@@ -39,12 +39,9 @@ for Budapest or [MOHU Budapest Hulladéknaptár](https://mohubudapest.hu/hullade
 | calendar | **Y** | `false` | Show MOHU Budapest schedule in calendar |
 | calendar_lang | **Y** | `en` | Language to display garbage type in calendar |
 | green | **Y** | `false` | Include green garbage schedule as well |
-| greencolor | **Y** | `` | Use map color for districts that have different green garbage collecting days per region (see below) |
+| greencolor | **Y** | `` | Not used anymore |
 | ssl | **Y** | `false` | Check SSL certificate |
 ---
-
-For green garbage collection, `greencolor`, if defined, takes precedence over `publicplace`-`housenr`. Color name can be fetched from the source of the webpage `mohubudapest.hu/kerti-zoldhulladek-korzetek-<districts_roman_number>-kerulet` and is one of these:
-`kek`, `lila`, `narancs`, `rozsaszin`, `sarga`. `greencolor` has to be defined for Budapest districts.
 
 Green garbage collection related attribute will not be included when the green garbage collection service is suspended during winter time ([MOHU Budapest Zöldhulladék](https://mohubudapest.hu/kerti-zoldhulladek-gyujtes)).
 
