@@ -164,10 +164,19 @@ def gconverter(argument):
     switcher = {
       "Szelektív": "selective",
       "Kommunális": "communal",
+      'Zöld': "green",
       'Szelektív Kommunális': "communal_selective",
       'Kommunális Szelektív': "communal_selective",
+      'Kommunális Zöld': "communal_green",
+      'Zöld Kommunális': "communal_green",
+      'Szelektív Zöld': "selective_green",
+      'Zöld Szelektív': "selective_green",
       'Kommunális Szelektív Zöld': "communal_selective_green",
-      'Kommunális Zöld': "communal_green"
+      'Kommunális Zöld Szelektív': "communal_selective_green",
+      'Szelektív Kommunális Zöld': "communal_selective_green",
+      'Szelektív Zöld Kommunális': "communal_selective_green",
+      'Zöld Kommunális Szelektív': "communal_selective_green",
+      'Zöld Szelektív Kommunális': "communal_selective_green"
     }
     return switcher.get(argument)
 
@@ -339,25 +348,14 @@ async def async_get_fkfdata(self):
               gdays = -1
             _LOGGER.debug(self._publicplace + ": " + str(gdays) + ": " + gtype)
 
-            if gtype == "selective" and self._next_selective_days == None:
+            if "selective" in gtype and self._next_selective_days == None:
               self._next_selective_days = gdays
-            if gtype == "communal" and self._next_communal_days == None:
+
+            if "communal" in gtype and self._next_communal_days == None:
               self._next_communal_days = gdays
-            if gtype == "communal_selective" and self._next_selective_days == None:
-              self._next_selective_days = gdays
-              if self._next_communal_days == None:
-                self._next_communal_days = gdays
-            if gtype == "communal_selective_green" and self._next_selective_days == None and self._zipcode == ZIPCODE_BUDAORS:
-              self._next_selective_days = gdays
-              if self._next_communal_days == None:
-                self._next_communal_days = gdays
-              if self._green and self._next_green_days == None:
-                self._next_green_days = gdays
-            if gtype == "communal_green" and self._zipcode == ZIPCODE_BUDAORS:
-              if self._next_communal_days == None:
-                self._next_communal_days = gdays
-              if self._green and self._next_green_days == None:
-                self._next_green_days = gdays
+
+            if "green" in gtype and self._next_green_days == None:
+              self._next_green_days = gdays
 
             if self._green and self._next_green_days != None and self._zipcode != ZIPCODE_BUDAORS:
                 if gdays == green_day_diff:
