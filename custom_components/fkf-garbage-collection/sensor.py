@@ -214,6 +214,7 @@ async def async_get_fkfdata(self):
     weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
     green_dayEN = None
     green_not_added = True
+    gfound = False
     s = ""
     s1 = ""
     s2 = ""
@@ -226,9 +227,13 @@ async def async_get_fkfdata(self):
     today = datetime.today().strftime(date_format)
     if int(datetime.today().strftime('%j')) < MAR1 or int(datetime.today().strftime('%j')) > DEC3:
       self._green = False
-      self._green_green_days = None
+      self._next_green_days = None
+    if len(self._greencolor) == 0 or self._zipcode == ZIPCODE_BUDAORS:
+      self._green = False
+      self._next_green_days = None
+      _LOGGER.debug("greencolor parameter not set for " + self._publicplace + " or Budaörs")
 
-    if self._green and self._zipcode != ZIPCODE_BUDAORS:
+    if self._green:
         url = 'https://' + URL + '/kerti-zoldhulladek-korzetek-' + _getRomanDistrictFromZip(self._zipcode) + '-kerulet'
         for i in range(MAX_RETRIES):
           try:
@@ -246,19 +251,27 @@ async def async_get_fkfdata(self):
               _LOGGER.error(f'error: {err} of type: {type(err)}')
               s = ""
               self._green = False
-              self._green_green_days = None
+              self._next_green_days = None
               await self._hass.async_add_executor_job(_sleep, 10)
 
         CLEANHTML = re.compile('<.*?>')
 
         for ind,line in enumerate(s):
-          matchre = re.compile(r'<strong>[A-ZÁÉÖŐÜ]+\&nbsp\;</strong>')
-          m = re.search(matchre,line)
+          m = re.search('uploaded-files/(.+?).jpeg',line)
           if m != None:
-            s2 = re.sub(CLEANHTML,'',line.replace("&nbsp;","").replace("\t","")) \
-                 .lower().capitalize()
-            _LOGGER.debug("Green: " + s2)
+            if cconverter(m.group(1)) == self._greencolor:
+              gfound = True
+              continue
+          if not gfound:
+            continue
+
+          matchre = re.search("<strong>(.+?)</strong>",line)
+          if matchre != None:
+            s2 = matchre.group(1).lower().capitalize()
+            _LOGGER.debug("found green: " + s2)
             break
+          else:
+            gfound = False
 
         if self._green:
           today_wday = datetime.today().weekday()
@@ -270,6 +283,7 @@ async def async_get_fkfdata(self):
             green_date = datetime.strptime(today, date_format) + timedelta(days=green_day_diff + self._offsetdays)
             if self._next_green_days == None:
               self._next_green_days = green_day_diff
+            _LOGGER.debug("Green: " + green_dayEN + " in " + str(self._next_green_days) + " days")
 
     url = 'https://' + URL + '/'
     try:
@@ -354,12 +368,10 @@ async def async_get_fkfdata(self):
             if "communal" in gtype and self._next_communal_days == None:
               self._next_communal_days = gdays
 
-            if "green" in gtype and self._next_green_days == None:
-              self._next_green_days = gdays
-
-            if self._green and self._next_green_days != None and self._zipcode != ZIPCODE_BUDAORS:
+            if self._green and self._next_green_days != None:
                 if gdays == green_day_diff:
                     gtype += "_green"
+                    green_not_added = False
                 elif green_day_diff < gdays and green_not_added:
                     json_data = {"day": green_dayEN, \
                                  "date": green_date.strftime(date_format), \
