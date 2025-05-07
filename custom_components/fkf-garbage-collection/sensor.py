@@ -290,7 +290,7 @@ async def async_get_fkfdata(self):
         async with _session.get(url, timeout=HTTP_TIMEOUT) as response:
             r = await response.text()
             cookie = response.headers['Set-Cookie']
-    except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
+    except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, aiohttp.client_exceptions.ClientConnectorError, asyncio.TimeoutError):
         _LOGGER.debug("Connection error to " + URL)
 
     if self._zipcode == ZIPCODE_BUDAORS:
