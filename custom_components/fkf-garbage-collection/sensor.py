@@ -267,7 +267,7 @@ async def async_get_fkfdata(self):
 
           matchre = re.search("<strong>(.+?)</strong>",line)
           if matchre != None:
-            s2 = matchre.group(1).lower().capitalize()
+            s2 = matchre.group(1).lower().capitalize().replace("&nbsp;","")
             _LOGGER.debug("found green: " + s2)
             break
           else:
