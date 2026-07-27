@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import lxml.html as lh
+import lxml.html as etree
 import re
 import time
 import voluptuous as vol
@@ -313,11 +314,7 @@ async def async_get_fkfdata(self):
     elif ".results" in fdata:
       s1 = fdata[".results"]
 
-    _LOGGER.debug("FKF " + self._publicplace + ": " + s1)
-
     if len(s1) > 0:
-      _LOGGER.debug("s1: " + s1)
-
       s = s1.replace("\n","").replace("\"","")
       s1 = re.sub(r'\s{2,}',' ',s)
       s = s1.replace("<div class=communal d-inline-block><i class=fas fa-trash fa-lg mr-2><","") \
@@ -329,27 +326,35 @@ async def async_get_fkfdata(self):
             .replace("</div>","") \
             .replace("colspan=3><hr class=white m-0","") \
             .replace("/i>","") \
+            .replace("<div class=col-12 mt-4> ","") \
             .replace("Konyhai zöld- és élelmiszerhulladék","bio") \
             .replace("Kommunális","communal") \
             .replace("Szelektív","selective") \
             .replace("Zöld","green")
 
       doc = lh.fromstring(s)
-      tr_elements = doc.xpath('//tr')
+      tr_elements = doc.xpath('//*')
+      _LOGGER.debug("FKF " + self._publicplace + " s: " + s)
 
-    json_data_list = []
-    if len(tr_elements) > 0:
-      gday = tr_elements[0].xpath('//td[1]/text()')
-      gdate = tr_elements[0].xpath('//td[2]/text()')
-      garbage = tr_elements[0].xpath('//td[3]/text()')
+      json_data_list = []
+      if len(tr_elements) > 0:
 
-      for i in range(len(garbage)-1):
-        if garbage[i] and not garbage[i] == ' ':
+        for i in range(len(tr_elements)):
+          xpath1 = ".//tr[%d]/td[1]/text()" %(i+1)
+          xpath2 = ".//tr[%d]/td[2]/text()" %(i+1)
+          xpath3 = ".//tr[%d]/td[3]/text()" %(i+1)
+
+          gday = doc.xpath(xpath1)
+          gdate = doc.xpath(xpath2)
+          garbage = doc.xpath(xpath3)
+          if len(garbage) == 0:
+            continue
+
           a = datetime.strptime(today, date_format)
-          b = datetime.strptime(gdate[i], date_format)
+          b = datetime.strptime(gdate[0], date_format)
 
           if (b - a).days - self._offsetdays >= 0:
-            gtype = _gconverter(garbage[i].strip())
+            gtype = _gconverter(garbage[0].strip())
             gdays = (b - a).days - self._offsetdays
             if gdays is None:
               gdays = -1
@@ -376,8 +381,8 @@ async def async_get_fkfdata(self):
                     json_data_list.append(json_data)
                     green_not_added = False
 
-            json_data = {"day": dconverter(gday[i]), \
-                         "date": gdate[i], \
+            json_data = {"day": dconverter(gday[0]), \
+                         "date": gdate[0], \
                          "garbage": gtype, \
                          "diff": gdays}
             json_data_list.append(json_data)
