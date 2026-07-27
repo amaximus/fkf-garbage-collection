@@ -6,7 +6,6 @@ import asyncio
 import json
 import logging
 import lxml.html as lh
-import lxml.html as etree
 import re
 import time
 import voluptuous as vol
