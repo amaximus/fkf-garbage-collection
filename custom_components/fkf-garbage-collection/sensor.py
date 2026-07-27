@@ -1,5 +1,6 @@
 from datetime import timedelta
 from datetime import datetime
+from urllib.parse import urlencode
 import aiohttp
 import asyncio
 import json
@@ -277,52 +278,44 @@ async def async_get_fkfdata(self):
               self._next_green_days = green_day_diff
             _LOGGER.debug("Green: " + green_dayEN + " in " + str(self._next_green_days) + " days")
 
-    url = 'https://' + URL + '/'
-    try:
-        async with _session.get(url, timeout=HTTP_TIMEOUT) as response:
-            r = await response.text()
-            cookie = response.headers['Set-Cookie']
-    except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, aiohttp.client_exceptions.ClientConnectorError, asyncio.TimeoutError):
-        _LOGGER.debug("Connection error to " + URL)
-
     if self._zipcode == ZIPCODE_BUDAORS:
       url = 'https://' + URL + '/hulladeknaptar-budaors'
       payload_val = [self._publicplace]
       payload_key = ["publicPlace"]
-      october_par = ["ajax/budaorsResults"]
-      october_hnd = ["onSearch"]
     else:
       url = 'https://' + URL + '/hulladeknaptar'
       payload_val = [self._zipcode, self._publicplace, self._housenr]
       payload_key = ["district","publicPlace","houseNumber"]
-      october_par = ["ajax/publicPlaces","ajax/houseNumbers","ajax/calSearchResults"]
-      october_hnd = ["onSelectDistricts","onSavePublicPlace","onSearch"]
 
-    if len(cookie) != 0:
-        for i in range(len(payload_key)):
-            payload = {payload_key[i]: payload_val[i]}
-            headers = {'X-OCTOBER-REQUEST-PARTIALS': october_par[i], \
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36', \
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', \
-                'X-OCTOBER-REQUEST-HANDLER': october_hnd[i], \
-                'Accept': '*/*', \
-                'Sec-Fetch-Dest': 'empty', \
-                'X-Requested-With': 'XMLHttpRequest', \
-                'Cookie': cookie}
-            try:
-                async with _session.post(url, data=payload, headers=headers, timeout=HTTP_TIMEOUT) as response:
-                    fdata = await response.json()
-            except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
-                _LOGGER.debug("Connection error to fetch data from " + url)
-                break
+    headers = {'X-OCTOBER-REQUEST-PARTIALS': "ajax/calSearchResults", \
+               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36', \
+               'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', \
+               'X-OCTOBER-REQUEST-HANDLER': "onSearch", \
+               'Accept': '*/*', \
+               'Sec-Fetch-Dest': 'empty', \
+               'X-Requested-With': 'XMLHttpRequest'}
+    data = []
+    for i in range(len(payload_key)):
+      data.append((payload_key[i], payload_val[i]))
 
-    if 'ajax/calSearchResults' in fdata:
-      s1 = fdata["ajax/calSearchResults"]
-    if 'ajax/budaorsResults' in fdata:
-      s1 = fdata["ajax/budaorsResults"]
+    payload = urlencode(data, doseq=True, encoding="UTF-8").encode()
+
+    try:
+      async with _session.post(url, data=payload, headers=headers, timeout=HTTP_TIMEOUT) as response:
+        fdata = await response.json()
+    except (aiohttp.ContentTypeError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError):
+      _LOGGER.debug("Connection error to fetch data from " + url)
+
+
+    if self._zipcode == ZIPCODE_BUDAORS:
+      if "ajax/budaorsResults" in fdata:
+        s1 = fdata["ajax/budaorsResults"]
+    elif ".results" in fdata:
+      s1 = fdata[".results"]
+
+    _LOGGER.debug("FKF " + self._publicplace + ": " + s1)
 
     if len(s1) > 0:
-
       _LOGGER.debug("s1: " + s1)
 
       s = s1.replace("\n","").replace("\"","")
