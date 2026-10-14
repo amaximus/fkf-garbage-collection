@@ -71,11 +71,13 @@ class EntitiesCalendarData:
         self._translation = {
             "hu": { "communal": "kommunális",
                     "green": "zöld",
-                    "selective": "szelektív"
+                    "selective": "szelektív",
+                    "bio": "bio"
                   },
             "en": { "communal": "communal",
                     "green": "green",
-                    "selective": "selective"
+                    "selective": "selective",
+                    "bio": "bio"
                   }
        }
 
@@ -93,7 +95,7 @@ class EntitiesCalendarData:
         gtranslated = ""
         garbagelist = gstr.split("_")
         for g in garbagelist:
-            gtranslated += self._translation[lng][g] + ","
+            gtranslated += self._translation[lng].get(g, g) + ","
         gtranslated = gtranslated[:-1]
         return gtranslated
 
